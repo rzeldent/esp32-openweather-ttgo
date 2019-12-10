@@ -11,7 +11,7 @@
 #include <ArduinoJson.h>
 #include <NTPClient.h>
 
-#include "settings.h"
+#include ".settings.h"
 
 #define BUTTON_1 35
 #define BUTTON_2 0
@@ -21,7 +21,7 @@ auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
 Button2 button1(BUTTON_1);
 Button2 button2(BUTTON_2);
 WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 3600, 60000);
+NTPClient timeClient(ntpUDP, NTP_POOL, 3600, 60000);
 
 void setup()
 {
@@ -34,7 +34,7 @@ void setup()
   //  tft.setFreeFont(&FreeSansBold12pt7b);
 
   tft.setTextColor(TFT_BLUE);
-  tft.println("TTGO OpenSky\n");
+  tft.println("TTGO OpenWeathermap\n");
 
   tft.setTextFont(1);
   tft.setTextColor(TFT_WHITE);
@@ -59,7 +59,6 @@ void loop()
 {
   tft.fillScreen(TFT_BLACK);
   tft.setCursor(0, 0);
-
 
   if (WiFi.isConnected())
   {
