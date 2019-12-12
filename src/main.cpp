@@ -12,6 +12,7 @@
 #include <NTPClient.h>
 
 #include ".settings.h"
+#include <icons.h>
 
 #define BUTTON_1 35
 #define BUTTON_2 0
@@ -31,7 +32,6 @@ void setup()
   tft.setCursor(0, 0);
   tft.setTextDatum(MC_DATUM);
   tft.setTextFont(4);
-  //  tft.setFreeFont(&FreeSansBold12pt7b);
 
   tft.setTextColor(TFT_BLUE);
   tft.println("TTGO OpenWeathermap\n");
