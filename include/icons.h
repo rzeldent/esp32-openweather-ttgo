@@ -28,3 +28,6 @@ typedef struct
 #include "image_11.h"
 #include "image_13.h"
 #include "image_50.h"
+
+#include "image_temperature.h"
+#include "image_humidity.h"

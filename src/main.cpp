@@ -54,10 +54,16 @@ NTPClient timeClient(ntpUDP, NTP_POOL, NTP_TIMEOFFSET, NTP_UPDATE_MILLISECONDS);
 #define MAIN_BAR_Y TOP_BAR_HEIGHT
 #define MAIN_BAR_HEIGHT (TFT_WIDTH - TOP_BAR_HEIGHT - BOTTOM_BAR_HEIGHT)
 
+#define TEMPERATURE_HEIGHT 48
+#define HUMIDITY_HEIGHT 48
+
 #define MAIN_BAR_DEGREES_X 0
+#define MAIN_BAR_DEGREES_ICON_X 100
 #define MAIN_BAR_DEGREES_Y MAIN_BAR_Y
+
 #define MAIN_BAR_HUMIDITY_X 0
-#define MAIN_BAR_HUMIDITY_Y (MAIN_BAR_DEGREES_Y + 48)
+#define MAIN_BAR_HUMIDITY_ICON_X 100
+#define MAIN_BAR_HUMIDITY_Y (MAIN_BAR_DEGREES_Y + TEMPERATURE_HEIGHT)
 
 #define MAIN_BAR_ICON_Y (MAIN_BAR_Y + (MAIN_BAR_HEIGHT - WEATHER_ICON_HEIGHT) / 2)
 #define MAIN_BAR_ICON_X (TFT_HEIGHT - WEATHER_ICON_WIDTH)
@@ -108,7 +114,7 @@ void loop()
   // Update  time
   if (loopCount % (TIME_UPDATE_MILLISECONDS / LOOP_MILLISECONDS) == 0)
   {
-    tft.fillRect(TOP_BAR_TIME_X, TOP_BAR_Y, TOP_BAR_TIME_WIDTH, TOP_BAR_HEIGHT, /*BACKGROUND_COLOR*/ TFT_PURPLE);
+    tft.fillRect(TOP_BAR_TIME_X, TOP_BAR_Y, TOP_BAR_TIME_WIDTH, TOP_BAR_HEIGHT, BACKGROUND_COLOR);
     // Font(4) = 26px
     tft.drawString(timeClient.getFormattedTime(), TOP_BAR_TIME_X, TOP_BAR_Y, 4);
   }
@@ -119,6 +125,10 @@ void loop()
     {
       tft.fillRect(0, MAIN_BAR_Y, TFT_HEIGHT, MAIN_BAR_HEIGHT, BACKGROUND_COLOR);
       tft.fillRect(0, BOTTOM_BAR_Y, TFT_HEIGHT, BOTTOM_BAR_HEIGHT, BACKGROUND_COLOR);
+
+      // Draw the temperature and Humidity icons
+      tft.pushImage(MAIN_BAR_DEGREES_ICON_X, MAIN_BAR_DEGREES_Y, 48, 48, image_temperature.data, IMAGE_TRANSPARTENT_COLOR);
+      tft.pushImage(MAIN_BAR_HUMIDITY_ICON_X, MAIN_BAR_HUMIDITY_Y, 48, 48, image_humidity.data, IMAGE_TRANSPARTENT_COLOR);
 
       HTTPClient client;
       client.begin("http://api.openweathermap.org/data/2.5/weather?q=" OPENWEATHERMAP_LOCATION "&appid=" OPENWEATHERMAP_ID "&units=metric");
