@@ -1,9 +1,9 @@
 # TTGO-OpenWeathermap
-openweathermap.org interface for the @[TTGO-T-Display](https://github.com/Xinyuan-LilyGO/TTGO-T-Display/blob/master/TTGO-T-Display.ino) ESP-32 Module.
+openweathermap.org interface for the ![TTGO-T-Display](https://github.com/Xinyuan-LilyGO/TTGO-T-Display/blob/master/TTGO-T-Display.ino) ESP-32 Module.
 
 **Work in progess** but looking forward to suggestions / branches!
 
-Current state: @[hardware.png](https://github.com/rzeldent/TTGO-OpenWeather/blob/develop/hardware.png)
+Current state: ![hardware.png](https://github.com/rzeldent/TTGO-OpenWeather/blob/develop/hardware.png)
 
 At the moment the basic functionality is working: Time is updated, API is queried and temperature, humidity, pressure, weather description and icons are shown. So it is functioning and can be used immediately!
 
