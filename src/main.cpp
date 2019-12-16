@@ -57,16 +57,19 @@ NTPClient timeClient(ntpUDP, NTP_POOL, NTP_TIMEOFFSET, NTP_UPDATE_MILLISECONDS);
 #define TEMPERATURE_HEIGHT 48
 #define HUMIDITY_HEIGHT 48
 
-#define MAIN_BAR_DEGREES_X 0
-#define MAIN_BAR_DEGREES_ICON_X 100
-#define MAIN_BAR_DEGREES_Y MAIN_BAR_Y
+#define MAIN_BAR_TEMPERATURE_ICON_X 0
+#define MAIN_BAR_TEMPERATURE_X 50
+#define MAIN_BAR_TEMPERATURE_Y MAIN_BAR_Y
 
-#define MAIN_BAR_HUMIDITY_X 0
-#define MAIN_BAR_HUMIDITY_ICON_X 100
-#define MAIN_BAR_HUMIDITY_Y (MAIN_BAR_DEGREES_Y + TEMPERATURE_HEIGHT)
+#define MAIN_BAR_HUMIDITY_ICON_X 0
+#define MAIN_BAR_HUMIDITY_X 50
+#define MAIN_BAR_HUMIDITY_Y (MAIN_BAR_TEMPERATURE_Y + TEMPERATURE_HEIGHT)
 
-#define MAIN_BAR_ICON_Y (MAIN_BAR_Y + (MAIN_BAR_HEIGHT - WEATHER_ICON_HEIGHT) / 2)
-#define MAIN_BAR_ICON_X (TFT_HEIGHT - WEATHER_ICON_WIDTH)
+#define MAIN_BAR_WEATHER_ICON_Y MAIN_BAR_Y
+#define MAIN_BAR_WEATHER_ICON_X (TFT_HEIGHT - WEATHER_ICON_WIDTH)
+
+#define MAIN_BAR_PRESSURE_Y (MAIN_BAR_Y + WEATHER_ICON_HEIGHT)
+#define MAIN_BAR_PRESSURE_X (TFT_HEIGHT - WEATHER_ICON_WIDTH)
 
 void setup()
 {
@@ -127,7 +130,7 @@ void loop()
       tft.fillRect(0, BOTTOM_BAR_Y, TFT_HEIGHT, BOTTOM_BAR_HEIGHT, BACKGROUND_COLOR);
 
       // Draw the temperature and Humidity icons
-      tft.pushImage(MAIN_BAR_DEGREES_ICON_X, MAIN_BAR_DEGREES_Y, 48, 48, image_temperature.data, IMAGE_TRANSPARTENT_COLOR);
+      tft.pushImage(MAIN_BAR_TEMPERATURE_ICON_X, MAIN_BAR_TEMPERATURE_Y, 48, 48, image_temperature.data, IMAGE_TRANSPARTENT_COLOR);
       tft.pushImage(MAIN_BAR_HUMIDITY_ICON_X, MAIN_BAR_HUMIDITY_Y, 48, 48, image_humidity.data, IMAGE_TRANSPARTENT_COLOR);
 
       HTTPClient client;
@@ -149,7 +152,7 @@ void loop()
           const auto humidity = (uint8_t)doc["main"]["humidity"];
 
           // Font(6) = 48px
-          tft.drawString(temperature, MAIN_BAR_DEGREES_X, MAIN_BAR_DEGREES_Y, 6);
+          tft.drawString(temperature, MAIN_BAR_TEMPERATURE_X, MAIN_BAR_TEMPERATURE_Y, 6);
           tft.drawString(String(humidity), MAIN_BAR_HUMIDITY_X, MAIN_BAR_HUMIDITY_Y, 6);
 
           const auto dt = (uint32_t)doc["dt"];
@@ -165,8 +168,12 @@ void loop()
           {
             // Font(2) = 16px
             tft.drawString(info->description, 0, BOTTOM_BAR_Y, 2);
-            tft.pushImage(MAIN_BAR_ICON_X, MAIN_BAR_ICON_Y, WEATHER_ICON_WIDTH, WEATHER_ICON_HEIGHT, (isDay ? info->imageDay : info->imageNight)->data, IMAGE_TRANSPARTENT_COLOR);
+            tft.pushImage(MAIN_BAR_WEATHER_ICON_X, MAIN_BAR_WEATHER_ICON_Y, WEATHER_ICON_WIDTH, WEATHER_ICON_HEIGHT, (isDay ? info->imageDay : info->imageNight)->data, IMAGE_TRANSPARTENT_COLOR);
           }
+
+          const auto pressure = (float)doc["main"]["pressure"];
+          // Font(2) = 16px
+          tft.drawString(String((int)pressure) + " hpa", MAIN_BAR_PRESSURE_X, MAIN_BAR_PRESSURE_Y, 2);
         }
       }
       client.end();
