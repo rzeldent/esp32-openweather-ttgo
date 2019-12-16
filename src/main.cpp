@@ -27,21 +27,21 @@ WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, NTP_POOL, NTP_TIMEOFFSET, NTP_UPDATE_MILLISECONDS);
 
 // Screen is 240 * 135 pixels (rotated)
-// status bar: Time + wifi
 #define BACKGROUND_COLOR TFT_BLACK
+#define TEXT_COLOR TFT_WHITE
 
 #define WEATHER_ICON_WIDTH 75
 #define WEATHER_ICON_HEIGHT 75
 
-// General Info bar => Time, WiFi
+// General Info bar => Location, WiFi
 #define TOP_BAR_Y 0
 #define TOP_BAR_HEIGHT 26
+// Location
+#define TOP_BAR_LOCATION_X 0
+#define TOP_BAR_LOCATION_WIDTH 140
 // Time
-#define TOP_BAR_TIME_X 0
-#define TOP_BAR_TIME_WIDTH 120
-// Wifi
-#define TOP_BAR_WIFI_X TOP_BAR_TIME_WIDTH
-#define TOP_BAR_WIFI_WIDTH (TFT_HEIGHT - TOP_BAR_TIME_WIDTH)
+#define TOP_BAR_TIME_X TOP_BAR_LOCATION_WIDTH
+#define TOP_BAR_TIME_WIDTH (TFT_HEIGHT - TOP_BAR_LOCATION_WIDTH)
 
 // Bottom bar => Weather description
 #define BOTTOM_BAR_Y (TFT_WIDTH - BOTTOM_BAR_HEIGHT)
@@ -68,6 +68,7 @@ void setup()
   tft.setSwapBytes(true); // Swap the byte order for pushImage() - corrects endianness
   tft.setRotation(1);
   tft.setTextDatum(TL_DATUM); // Top Left
+  tft.setTextColor(TEXT_COLOR);
 
   // Show OpenWeather welcome screen / logo
   tft.pushImage(0, 0, OpenWeather.width, OpenWeather.height, OpenWeather.data);
@@ -88,12 +89,13 @@ void setup()
   timeClient.begin();
 
   // Clear the screen
-  tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, /*BACKGROUND_COLOR*/ TFT_YELLOW);
+  tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, BACKGROUND_COLOR);
+  // Set the location, Font(4) = 26px
+  tft.drawString(OPENWEATHERMAP_LOCATION, TOP_BAR_LOCATION_X, TOP_BAR_Y, 4);
 }
 
 #define LOOP_MILLISECONDS 1000
 #define TIME_UPDATE_MILLISECONDS 1000
-#define WIFI_UPDATE_MILLISECONDS 1000
 #define WEATHER_UPDATE_MILLISECONDS 60000
 
 uint loopCount;
@@ -106,43 +108,37 @@ void loop()
   // Update  time
   if (loopCount % (TIME_UPDATE_MILLISECONDS / LOOP_MILLISECONDS) == 0)
   {
-    // Font(4); //26px
+    tft.fillRect(TOP_BAR_TIME_X, TOP_BAR_Y, TOP_BAR_TIME_WIDTH, TOP_BAR_HEIGHT, /*BACKGROUND_COLOR*/ TFT_PURPLE);
+    // Font(4) = 26px
     tft.drawString(timeClient.getFormattedTime(), TOP_BAR_TIME_X, TOP_BAR_Y, 4);
-  }
-
-  if (loopCount % (WIFI_UPDATE_MILLISECONDS / LOOP_MILLISECONDS) == 0)
-  {
-   // tft.fillRect(TOP_BAR_WIFI_X, TOP_BAR_Y, TOP_BAR_WIFI_WIDTH, TOP_BAR_HEIGHT, /*BACKGROUND_COLOR*/ TFT_RED);
   }
 
   if (WiFi.isConnected())
   {
     if (loopCount % (WEATHER_UPDATE_MILLISECONDS / LOOP_MILLISECONDS) == 0)
     {
-      tft.fillRect(0, MAIN_BAR_Y, TFT_HEIGHT, MAIN_BAR_HEIGHT, /*BACKGROUND_COLOR*/ TFT_PURPLE);
-      tft.fillRect(0, BOTTOM_BAR_Y, TFT_HEIGHT, BOTTOM_BAR_HEIGHT, /*BACKGROUND_COLOR*/ TFT_NAVY);
+      tft.fillRect(0, MAIN_BAR_Y, TFT_HEIGHT, MAIN_BAR_HEIGHT, BACKGROUND_COLOR);
+      tft.fillRect(0, BOTTOM_BAR_Y, TFT_HEIGHT, BOTTOM_BAR_HEIGHT, BACKGROUND_COLOR);
 
       HTTPClient client;
       client.begin("http://api.openweathermap.org/data/2.5/weather?q=" OPENWEATHERMAP_LOCATION "&appid=" OPENWEATHERMAP_ID "&units=metric");
       auto code = client.GET();
       if (code == HTTP_CODE_OK)
       {
-        auto response = client.getString().c_str();
+        const auto response = client.getString().c_str();
         DynamicJsonDocument doc(2048);
-        // Font(4): 26px
-        tft.drawString(String(doc.memoryUsage()), TOP_BAR_WIFI_X, TOP_BAR_Y, 4);
 
         // Parse JSON object
-        auto error = deserializeJson(doc, response);
+        const auto error = deserializeJson(doc, response);
         if (!error)
         {
-          auto const temp = (float)doc["main"]["temp"];
+          const auto temp = (float)doc["main"]["temp"];
           // Round temperature to one digit
           char temperature[5];
           dtostrf(temp, 1, 1, temperature);
           const auto humidity = (uint8_t)doc["main"]["humidity"];
 
-          // Font(6); // 48px
+          // Font(6) = 48px
           tft.drawString(temperature, MAIN_BAR_DEGREES_X, MAIN_BAR_DEGREES_Y, 6);
           tft.drawString(String(humidity), MAIN_BAR_HUMIDITY_X, MAIN_BAR_HUMIDITY_Y, 6);
 
@@ -157,7 +153,7 @@ void loop()
 
           if (info->id)
           {
-            // Font(2); // 16px
+            // Font(2) = 16px
             tft.drawString(info->description, 0, BOTTOM_BAR_Y, 2);
             tft.pushImage(MAIN_BAR_ICON_X, MAIN_BAR_ICON_Y, WEATHER_ICON_WIDTH, WEATHER_ICON_HEIGHT, (isDay ? info->imageDay : info->imageNight)->data, IMAGE_TRANSPARTENT_COLOR);
           }
