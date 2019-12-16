@@ -3,7 +3,7 @@ openweathermap.org interface for the [TTGO-T-Display](https://github.com/Xinyuan
 
 **Work in progess** but looking forward to suggestions / branches!
 
-Current state: [hardware.png](hardware.png)
+Current state: [hardware.png](https://github.com/rzeldent/TTGO-OpenWeather/blob/develop/hardware.png)
 
 At the moment the basic functionality is working: Time is updated, API is queried and temperature, humidity, pressure, weather description and icons are shown. So it it functioning and can be used immediately!
 
