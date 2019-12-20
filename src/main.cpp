@@ -145,20 +145,23 @@ void loop()
         const auto error = deserializeJson(doc, response);
         if (!error)
         {
-          const auto temp = (float)doc["main"]["temp"];
+          const auto main = doc["main"];
+          auto temp = (const float)main["temp"];
           // Round temperature to one digit
           char temperature[5];
           dtostrf(temp, 1, 1, temperature);
-          const auto humidity = (uint8_t)doc["main"]["humidity"];
+          auto humidity = (const uint8_t)main["humidity"];
 
           // Font(6) = 48px
           tft.drawString(temperature, MAIN_BAR_TEMPERATURE_X, MAIN_BAR_TEMPERATURE_Y, 6);
           tft.drawString(String(humidity), MAIN_BAR_HUMIDITY_X, MAIN_BAR_HUMIDITY_Y, 6);
 
-          const auto dt = (uint32_t)doc["dt"];
-          const auto isDay = dt > (uint32_t)doc["sys"]["sunrise"] && dt < (uint32_t)doc["sys"]["sunset"];
+           auto dt = (const uint32_t)doc["dt"];
+          const auto sys = doc["sys"];
+          const auto isDay = dt > (const uint32_t)sys["sunrise"] && dt < (const uint32_t)sys["sunset"];
 
-          const auto id = (uint16_t)doc["weather"][0]["id"];
+          const auto weather = doc["weather"];
+          const auto id = (const uint16_t)weather[0]["id"];
           // Lookup weather code
           auto info = (const OpenWeatherIdt *)&openWeatherIds;
           while (info->id && info->id != id)
@@ -171,9 +174,9 @@ void loop()
             tft.pushImage(MAIN_BAR_WEATHER_ICON_X, MAIN_BAR_WEATHER_ICON_Y, WEATHER_ICON_WIDTH, WEATHER_ICON_HEIGHT, (isDay ? info->imageDay : info->imageNight)->data, IMAGE_TRANSPARTENT_COLOR);
           }
 
-          const auto pressure = (float)doc["main"]["pressure"];
+          const auto pressure = (const float)main["pressure"];
           // Font(2) = 16px
-          tft.drawString(String((int)pressure) + " hpa", MAIN_BAR_PRESSURE_X, MAIN_BAR_PRESSURE_Y, 2);
+          tft.drawString(String((const int)pressure) + " hpa", MAIN_BAR_PRESSURE_X, MAIN_BAR_PRESSURE_Y, 2);
         }
       }
       client.end();
