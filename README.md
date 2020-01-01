@@ -3,7 +3,7 @@ openweathermap.org interface for the ![TTGO-T-Display](https://github.com/Xinyua
 
 **Work in progess** but looking forward to suggestions / branches!
 
-**Copy the file settings.h to .settings to keep your settings secret.**
+**Copy the file settings.h to .settings.h to keep your settings secret.**
 
 Current state: ![hardware.png](https://github.com/rzeldent/TTGO-OpenWeather/blob/develop/hardware.png)
 
