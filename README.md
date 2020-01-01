@@ -2,6 +2,7 @@
 openweathermap.org interface for the ![TTGO-T-Display](https://github.com/Xinyuan-LilyGO/TTGO-T-Display/blob/master/TTGO-T-Display.ino) ESP-32 Module.
 
 **Work in progess** but looking forward to suggestions / branches!
+**Copy the file settings.h to .settings to keep your settings secret.**
 
 Current state: ![hardware.png](https://github.com/rzeldent/TTGO-OpenWeather/blob/develop/hardware.png)
 
