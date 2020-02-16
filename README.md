@@ -11,7 +11,7 @@ Create an account at [www.openweathermap.org](www.openweathermap.org) to obtain 
 Update the file .settings and:
  - enter the credentials for the WiFi (WIFI_SSID and WIFI_PASSWORD)
  - your location and id for the openeeathermap API (OPENWEATHERMAP_LOCATION and OPENWEATHERMAP_ID) 
-Update these variables in **.**settings file. The settings.h file is a skeleton file for the configuration.
+Update these variables in .settings file (notice the dot). The settings.h file is a skeleton file for the configuration.
 
 **Copy the file settings.h to .settings.h to keep your settings secret.**
 
