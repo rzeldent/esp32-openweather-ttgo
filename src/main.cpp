@@ -9,7 +9,10 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
+
 #include <NTPClient.h>
+#include <Timelib.h>
+#include <Timezone.h> // https://github.com/JChristensen/Timezone
 
 #include ".settings.h"
 #include <icons.h>
@@ -23,8 +26,12 @@ auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
 Button2 button1(BUTTON_1);
 Button2 button2(BUTTON_2);
 WiFiUDP ntpUDP;
-// Synchronize time every hour
-NTPClient timeClient(ntpUDP, NTP_POOL, NTP_TIMEOFFSET, NTP_UPDATE_MILLISECONDS);
+
+// Synchronize time every hour and use UTC
+NTPClient timeClient(ntpUDP, NTP_POOL, 0, NTP_UPDATE_MILLISECONDS);
+TimeChangeRule dstBegin = DST_BEGIN;
+TimeChangeRule dstEnd = DST_END;
+Timezone timeZone(dstBegin, dstEnd);
 
 // Screen is 240 * 135 pixels (rotated)
 #define BACKGROUND_COLOR TFT_BLACK
@@ -118,8 +125,13 @@ void loop()
   if (loopCount % (TIME_UPDATE_MILLISECONDS / LOOP_MILLISECONDS) == 0)
   {
     tft.fillRect(TOP_BAR_TIME_X, TOP_BAR_Y, TOP_BAR_TIME_WIDTH, TOP_BAR_HEIGHT, BACKGROUND_COLOR);
+    // Take into account DST
+    TimeChangeRule *tcr;
+    auto local = timeZone.toLocal(timeClient.getEpochTime(), &tcr);
+    char buff[9];
+    sprintf(buff, "%02d:%02d:%02d", hour(local), minute(local), second(local));
     // Font(4) = 26px
-    tft.drawString(timeClient.getFormattedTime(), TOP_BAR_TIME_X, TOP_BAR_Y, 4);
+    tft.drawString(buff, TOP_BAR_TIME_X, TOP_BAR_Y, 4);
   }
 
   if (WiFi.isConnected())
@@ -156,7 +168,7 @@ void loop()
           tft.drawString(temperature, MAIN_BAR_TEMPERATURE_X, MAIN_BAR_TEMPERATURE_Y, 6);
           tft.drawString(String(humidity), MAIN_BAR_HUMIDITY_X, MAIN_BAR_HUMIDITY_Y, 6);
 
-           auto dt = (const uint32_t)doc["dt"];
+          auto dt = (const uint32_t)doc["dt"];
           const auto sys = doc["sys"];
           const auto isDay = dt > (const uint32_t)sys["sunrise"] && dt < (const uint32_t)sys["sunset"];
 
