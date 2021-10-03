@@ -5,7 +5,7 @@
 // https://github.com/pavius/the-dot-factory
 // https://github.com/amitjakhu/dripicons-weather
 
-#define IMAGE_TRANSPARTENT_COLOR	0xFFFF
+#define IMAGE_TRANSPARTENT_COLOR	0x0000
 
 const extern tImage image_openweather;
 const extern tImage image_temperature;
@@ -24,4 +24,3 @@ const extern tImage image_10n;
 const extern tImage image_11;
 const extern tImage image_13;
 const extern tImage image_50;
-

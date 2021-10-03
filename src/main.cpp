@@ -71,11 +71,11 @@ Timezone timeZone(dstBegin, dstEnd);
 #define HUMIDITY_HEIGHT 48
 
 #define MAIN_BAR_TEMPERATURE_ICON_X 0
-#define MAIN_BAR_TEMPERATURE_X 50
+#define MAIN_BAR_TEMPERATURE_X 40
 #define MAIN_BAR_TEMPERATURE_Y MAIN_BAR_Y
 
 #define MAIN_BAR_HUMIDITY_ICON_X 0
-#define MAIN_BAR_HUMIDITY_X 50
+#define MAIN_BAR_HUMIDITY_X 40
 #define MAIN_BAR_HUMIDITY_Y (MAIN_BAR_TEMPERATURE_Y + TEMPERATURE_HEIGHT)
 
 #define MAIN_BAR_WEATHER_ICON_Y MAIN_BAR_Y
@@ -113,7 +113,7 @@ void setup()
   // Clear the screen
   tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, BACKGROUND_COLOR);
   // Set the location, Font(4) = 26px
-  tft.drawString(OPENWEATHERMAP_LOCATION, TOP_BAR_LOCATION_X, TOP_BAR_Y, FONT_26PT);
+  tft.drawString(OPENWEATHERMAP_LOCATION, TOP_BAR_LOCATION_X, TOP_BAR_Y, FONT_10PT);
 }
 
 #define LOOP_MILLISECONDS 1000
@@ -146,9 +146,12 @@ void loop()
       tft.fillRect(0, MAIN_BAR_Y, TFT_HEIGHT, MAIN_BAR_HEIGHT, BACKGROUND_COLOR);
       tft.fillRect(0, BOTTOM_BAR_Y, TFT_HEIGHT, BOTTOM_BAR_HEIGHT, BACKGROUND_COLOR);
 
-      // Draw the temperature and Humidity icons
+      // Draw the temperature and humidity icons
       tft.pushImage(MAIN_BAR_TEMPERATURE_ICON_X, MAIN_BAR_TEMPERATURE_Y, image_temperature.width, image_temperature.height, image_temperature.data, IMAGE_TRANSPARTENT_COLOR);
+      // Fix for degrees symbol : ° is ` in library
+      tft.drawCentreString("`C", MAIN_BAR_TEMPERATURE_ICON_X + image_temperature.width / 2, MAIN_BAR_TEMPERATURE_Y + image_temperature.height, FONT_10PT);
       tft.pushImage(MAIN_BAR_HUMIDITY_ICON_X, MAIN_BAR_HUMIDITY_Y, image_humidity.height, image_humidity.height, image_humidity.data, IMAGE_TRANSPARTENT_COLOR);
+      tft.drawCentreString("%R", MAIN_BAR_HUMIDITY_ICON_X + image_humidity.width / 2, MAIN_BAR_HUMIDITY_Y + image_humidity.height, FONT_10PT);
 
       HTTPClient client;
       client.begin("http://api.openweathermap.org/data/2.5/weather?q=" OPENWEATHERMAP_LOCATION "&appid=" OPENWEATHERMAP_API_ID "&units=metric");
