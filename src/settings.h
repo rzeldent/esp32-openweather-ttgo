@@ -6,8 +6,6 @@
 
 // NTP pool to use for the time synchronisation
 #define NTP_POOL        "europe.pool.ntp.org"
-// The offset in seconds from UTC (+1)
-#define NTP_TIMEOFFSET  3600
 // DST start and end (Central European Standard Time)
 #define DST_BEGIN       {"CEST", Last, Sun, Mar, 2, 120}
 #define DST_END         {"CET ", Last, Sun, Oct, 3, 60}
@@ -16,4 +14,4 @@
 
 // Openweathermap location and subscription id. Create an account at www.openweathermap.org to obtain an id.
 #define OPENWEATHERMAP_LOCATION "Amsterdam"
-#define OPENWEATHERMAP_ID       ""
+#define OPENWEATHERMAP_API_ID   ""
