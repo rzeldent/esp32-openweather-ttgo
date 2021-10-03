@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdint.h>
+#include <timage.h>
 
 typedef struct
 {
