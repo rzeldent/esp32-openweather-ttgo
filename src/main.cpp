@@ -16,8 +16,8 @@
 #include <images.h>
 #include <OpenWeatherId.h>
 
-constexpr byte button_1 = 35;
-constexpr byte button_2 = 0;
+constexpr byte button_top = 35;
+constexpr byte button_bottom = 0;
 
 constexpr auto font_10pt = 2; // Font 2. Small 16 pixel high font, needs ~3534 bytes in FLASH, 96 characters
 constexpr auto font_26pt = 4; // Font 4. Medium 26 pixel high font, needs ~5848 bytes in FLASH, 96 characters
@@ -26,14 +26,14 @@ constexpr auto font_48pt = 6; // Font 6. Large 48 pixel font, needs ~2666 bytes 
 // Use hardware SPI
 auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
 
-Button2 button1(button_1);
-Button2 button2(button_2);
+Button2 button1(button_top);
+Button2 button2(button_bottom);
 
 Timezone timeZone(dst_begin, dst_end);
 
 // Screen is 240 * 135 pixels (rotated)
-#define BACKGROUND_COLOR TFT_BLACK
-#define TEXT_COLOR TFT_WHITE
+constexpr auto background_color = TFT_BLACK;
+constexpr auto text_color = TFT_WHITE;
 
 #define WEATHER_ICON_WIDTH 75
 #define WEATHER_ICON_HEIGHT 75
@@ -82,7 +82,7 @@ void setup()
   tft.setSwapBytes(true); // Swap the byte order for pushImage() - corrects endianness
   tft.setRotation(1);
   tft.setTextDatum(TL_DATUM); // Top Left
-  tft.setTextColor(TEXT_COLOR);
+  tft.setTextColor(text_color);
 
   // Show OpenWeather welcome screen / logo
   tft.pushImage(0, 0, image_openweather.width, image_openweather.height, image_openweather.data);
@@ -106,7 +106,7 @@ void setup()
   configTime(0, 0, ntp_server_1, ntp_server_2, ntp_server_3);
 
   // Clear the screen
-  tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, BACKGROUND_COLOR);
+  tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, background_color);
   // Set the location, Font(4) = 26px
   tft.drawString(openweathermap_location, TOP_BAR_LOCATION_X, TOP_BAR_Y, font_10pt);
 }
@@ -117,7 +117,7 @@ uint loopCount;
 
 void loop()
 {
-  tft.fillRect(TOP_BAR_TIME_X, TOP_BAR_Y, TOP_BAR_TIME_WIDTH, TOP_BAR_HEIGHT, BACKGROUND_COLOR);
+  tft.fillRect(TOP_BAR_TIME_X, TOP_BAR_Y, TOP_BAR_TIME_WIDTH, TOP_BAR_HEIGHT, background_color);
   // Take into account DST
   time_t now;
   time(&now);
@@ -131,8 +131,8 @@ void loop()
   {
     if (loopCount % (weather_update_milliseconds / time_update_milliseconds) == 0)
     {
-      tft.fillRect(0, MAIN_BAR_Y, TFT_HEIGHT, MAIN_BAR_HEIGHT, BACKGROUND_COLOR);
-      tft.fillRect(0, BOTTOM_BAR_Y, TFT_HEIGHT, BOTTOM_BAR_HEIGHT, BACKGROUND_COLOR);
+      tft.fillRect(0, MAIN_BAR_Y, TFT_HEIGHT, MAIN_BAR_HEIGHT, background_color);
+      tft.fillRect(0, BOTTOM_BAR_Y, TFT_HEIGHT, BOTTOM_BAR_HEIGHT, background_color);
 
       // Draw the temperature and humidity icons
       tft.pushImage(MAIN_BAR_TEMPERATURE_ICON_X, MAIN_BAR_TEMPERATURE_Y, image_temperature.width, image_temperature.height, image_temperature.data, IMAGE_TRANSPARTENT_COLOR);
