@@ -3,8 +3,8 @@
 #include <Timezone.h> // https://github.com/JChristensen/Timezone
 
 // The SSID and password of the accesspoint to connect to
-constexpr auto wifi_ssid = "<fill in yours>";
-constexpr auto wifi_password = "<fill in yours>";
+constexpr auto wifi_ssid = "<your wifi ssid>";
+constexpr auto wifi_password = "<your wifi password>";
 
 // There must always be 3 NTP servers. Remove or replace by null if not required
 constexpr auto ntp_server_1 = "europe.pool.ntp.org";
@@ -17,7 +17,7 @@ constexpr TimeChangeRule dst_end = {"CET ", Last, Sun, Oct, 3, 60};
 
 // Openweathermap location and subscription id. Create an account at www.openweathermap.org to obtain an id.
 constexpr auto openweathermap_location = "Amsterdam";
-constexpr auto openweathermap_api_id = "<fill in yours>";
+constexpr auto openweathermap_api_id = "<your api key>";
 
 // Every 2 minutes update the display
 constexpr auto weather_update_milliseconds = 120000u;
