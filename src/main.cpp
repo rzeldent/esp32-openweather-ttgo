@@ -1,7 +1,5 @@
 #include <Arduino.h>
 #include <SPI.h>
-#include <FS.h>
-#include <SPIFFS.h>
 // Setting for the display are defined in platformio.ini
 #include <TFT_eSPI.h>
 
@@ -12,32 +10,29 @@
 #include <ArduinoJson.h>
 
 #include <time.h>
-#include <Timezone.h> // https://github.com/JChristensen/Timezone
 
 #include ".settings.h"
 #include <images.h>
 #include <OpenWeatherId.h>
 
-#define BUTTON_1 35
-#define BUTTON_2 0
+constexpr byte button_top = 35;
+constexpr byte button_bottom = 0;
 
-#define FONT_10PT 2 // Font 2. Small 16 pixel high font, needs ~3534 bytes in FLASH, 96 characters
-#define FONT_26PT 4 // Font 4. Medium 26 pixel high font, needs ~5848 bytes in FLASH, 96 characters
-#define FONT_48PT 6 // Font 6. Large 48 pixel font, needs ~2666 bytes in FLASH, only characters 1234567890:-.apm
+constexpr auto font_10pt = 2; // Font 2. Small 16 pixel high font, needs ~3534 bytes in FLASH, 96 characters
+constexpr auto font_26pt = 4; // Font 4. Medium 26 pixel high font, needs ~5848 bytes in FLASH, 96 characters
+constexpr auto font_48pt = 6; // Font 6. Large 48 pixel font, needs ~2666 bytes in FLASH, only characters 1234567890:-.apm
 
 // Use hardware SPI
 auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
 
-Button2 button1(BUTTON_1);
-Button2 button2(BUTTON_2);
+Button2 button1(button_top);
+Button2 button2(button_bottom);
 
-TimeChangeRule dstBegin = DST_BEGIN;
-TimeChangeRule dstEnd = DST_END;
-Timezone timeZone(dstBegin, dstEnd);
+Timezone timeZone(dst_begin, dst_end);
 
 // Screen is 240 * 135 pixels (rotated)
-#define BACKGROUND_COLOR TFT_BLACK
-#define TEXT_COLOR TFT_WHITE
+constexpr auto background_color = TFT_BLACK;
+constexpr auto text_color = TFT_WHITE;
 
 #define WEATHER_ICON_WIDTH 75
 #define WEATHER_ICON_HEIGHT 75
@@ -86,47 +81,42 @@ void setup()
   tft.setSwapBytes(true); // Swap the byte order for pushImage() - corrects endianness
   tft.setRotation(1);
   tft.setTextDatum(TL_DATUM); // Top Left
-  tft.setTextColor(TEXT_COLOR);
+  tft.setTextColor(text_color);
 
   // Show OpenWeather welcome screen / logo
   tft.pushImage(0, 0, image_openweather.width, image_openweather.height, image_openweather.data);
 
-  // Wait 30 seconds for a connection, otherwise reset
+  log_i("Connecting to accesspoint: %s", wifi_ssid);
   WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  auto i = 30;
-  do
+  WiFi.begin(wifi_ssid, wifi_password);
+  log_w("Waiting for WiFi connection");
+  if (WiFi.waitForConnectResult() != WL_CONNECTED)
   {
-    if (!i--)
-    {
-      // Clear the screen
-      tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, BACKGROUND_COLOR);
-      // Show error message
-      tft.drawString("Could not connect to: " WIFI_SSID, TOP_BAR_LOCATION_X, TOP_BAR_Y, FONT_26PT);
-      sleep(5000);
-      // Restart
-      ESP.restart();
-    }
+    log_w("Connection Failed! Rebooting...");
+    // Show Dinosour / cactus image, wait an reset
+    tft.pushImage(0, 0, image_no_internet.width, image_no_internet.height, image_no_internet.data);
+    delay(10000);
+    ESP.restart();
+  }
 
-    sleep(1);
-  } while (!WiFi.isConnected());
+  log_i("WiFi connected. IP: %s", WiFi.localIP().toString().c_str());
 
   // Set the time servers
-  configTime(0, 0, NTP_SERVERS);
+  configTime(0, 0, ntp_server_1, ntp_server_2, ntp_server_3);
 
   // Clear the screen
-  tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, BACKGROUND_COLOR);
+  tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, background_color);
   // Set the location, Font(4) = 26px
-  tft.drawString(OPENWEATHERMAP_LOCATION, TOP_BAR_LOCATION_X, TOP_BAR_Y, FONT_10PT);
+  tft.drawString(openweathermap_location, TOP_BAR_LOCATION_X, TOP_BAR_Y, font_10pt);
 }
 
-#define TIME_UPDATE_MILLISECONDS 1000
+constexpr auto time_update_milliseconds = 1000ul;
 
 uint loopCount;
 
 void loop()
 {
-  tft.fillRect(TOP_BAR_TIME_X, TOP_BAR_Y, TOP_BAR_TIME_WIDTH, TOP_BAR_HEIGHT, BACKGROUND_COLOR);
+  tft.fillRect(TOP_BAR_TIME_X, TOP_BAR_Y, TOP_BAR_TIME_WIDTH, TOP_BAR_HEIGHT, background_color);
   // Take into account DST
   time_t now;
   time(&now);
@@ -134,24 +124,24 @@ void loop()
   auto local = timeZone.toLocal(now, &tcr);
   char buff[9];
   sprintf(buff, "%02d:%02d:%02d", hour(local), minute(local), second(local));
-  tft.drawString(buff, TOP_BAR_TIME_X, TOP_BAR_Y, FONT_26PT);
+  tft.drawString(buff, TOP_BAR_TIME_X, TOP_BAR_Y, font_26pt);
 
   if (WiFi.isConnected())
   {
-    if (loopCount % (WEATHER_UPDATE_MILLISECONDS / TIME_UPDATE_MILLISECONDS) == 0)
+    if (loopCount % (weather_update_milliseconds / time_update_milliseconds) == 0)
     {
-      tft.fillRect(0, MAIN_BAR_Y, TFT_HEIGHT, MAIN_BAR_HEIGHT, BACKGROUND_COLOR);
-      tft.fillRect(0, BOTTOM_BAR_Y, TFT_HEIGHT, BOTTOM_BAR_HEIGHT, BACKGROUND_COLOR);
+      tft.fillRect(0, MAIN_BAR_Y, TFT_HEIGHT, MAIN_BAR_HEIGHT, background_color);
+      tft.fillRect(0, BOTTOM_BAR_Y, TFT_HEIGHT, BOTTOM_BAR_HEIGHT, background_color);
 
       // Draw the temperature and humidity icons
       tft.pushImage(MAIN_BAR_TEMPERATURE_ICON_X, MAIN_BAR_TEMPERATURE_Y, image_temperature.width, image_temperature.height, image_temperature.data, IMAGE_TRANSPARTENT_COLOR);
       // Fix for degrees symbol : ° is ` in library (only 16pt font)
-      tft.drawCentreString("`C", MAIN_BAR_TEMPERATURE_ICON_X + image_temperature.width / 2, MAIN_BAR_TEMPERATURE_Y + image_temperature.height, FONT_10PT);
+      tft.drawCentreString("`C", MAIN_BAR_TEMPERATURE_ICON_X + image_temperature.width / 2, MAIN_BAR_TEMPERATURE_Y + image_temperature.height, font_10pt);
       tft.pushImage(MAIN_BAR_HUMIDITY_ICON_X, MAIN_BAR_HUMIDITY_Y, image_humidity.height, image_humidity.height, image_humidity.data, IMAGE_TRANSPARTENT_COLOR);
-      tft.drawCentreString("%R", MAIN_BAR_HUMIDITY_ICON_X + image_humidity.width / 2, MAIN_BAR_HUMIDITY_Y + image_humidity.height, FONT_10PT);
+      tft.drawCentreString("%R", MAIN_BAR_HUMIDITY_ICON_X + image_humidity.width / 2, MAIN_BAR_HUMIDITY_Y + image_humidity.height, font_10pt);
 
       HTTPClient client;
-      client.begin("http://api.openweathermap.org/data/2.5/weather?q=" OPENWEATHERMAP_LOCATION "&appid=" OPENWEATHERMAP_API_ID "&units=metric");
+      client.begin(String("http://api.openweathermap.org/data/2.5/weather?q=") + openweathermap_location + "&appid=" + openweathermap_api_id + "&units=metric");
       auto code = client.GET();
       if (code == HTTP_CODE_OK)
       {
@@ -168,8 +158,8 @@ void loop()
 
           auto temperatureString = String(temperature, 1);
           auto humidityString = String(humidity);
-          tft.drawString(temperatureString, MAIN_BAR_TEMPERATURE_X, MAIN_BAR_TEMPERATURE_Y, FONT_48PT);
-          tft.drawString(humidityString, MAIN_BAR_HUMIDITY_X, MAIN_BAR_HUMIDITY_Y, FONT_48PT);
+          tft.drawString(temperatureString, MAIN_BAR_TEMPERATURE_X, MAIN_BAR_TEMPERATURE_Y, font_48pt);
+          tft.drawString(humidityString, MAIN_BAR_HUMIDITY_X, MAIN_BAR_HUMIDITY_Y, font_48pt);
 
           auto dt = (const uint32_t)doc["dt"];
           const auto sys = doc["sys"];
@@ -184,13 +174,13 @@ void loop()
 
           if (info->id)
           {
-            tft.drawCentreString(info->description, TFT_HEIGHT / 2, BOTTOM_BAR_Y, FONT_10PT);
+            tft.drawCentreString(info->description, TFT_HEIGHT / 2, BOTTOM_BAR_Y, font_10pt);
             auto image = isDay ? info->imageDay : info->imageNight;
             tft.pushImage(MAIN_BAR_WEATHER_ICON_X, MAIN_BAR_WEATHER_ICON_Y, image->width, image->height, image->data, IMAGE_TRANSPARTENT_COLOR);
           }
 
           const auto pressure = (const float)main["pressure"];
-          tft.drawRightString(String((const int)pressure) + " hpa", TFT_HEIGHT, MAIN_BAR_PRESSURE_Y, FONT_10PT);
+          tft.drawRightString(String((const int)pressure) + " hpa", TFT_HEIGHT, MAIN_BAR_PRESSURE_Y, font_10pt);
         }
       }
       client.end();
@@ -198,5 +188,5 @@ void loop()
   }
 
   loopCount++;
-  delayMicroseconds(1000 * TIME_UPDATE_MILLISECONDS);
+  delay(time_update_milliseconds);
 }
