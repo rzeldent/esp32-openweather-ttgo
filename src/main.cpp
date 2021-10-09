@@ -111,7 +111,7 @@ void setup()
   tft.drawString(openweathermap_location, TOP_BAR_LOCATION_X, TOP_BAR_Y, font_10pt);
 }
 
-constexpr uint time_update_milliseconds = 1000;
+constexpr auto time_update_milliseconds = 1000ul;
 
 uint loopCount;
 

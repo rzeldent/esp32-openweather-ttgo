@@ -20,4 +20,4 @@ constexpr auto openweathermap_location = "Amsterdam";
 constexpr auto openweathermap_api_id = "<your api key>";
 
 // Every 2 minutes update the display
-constexpr auto weather_update_milliseconds = 120000u;
+constexpr auto weather_update_milliseconds = 120000ul;
