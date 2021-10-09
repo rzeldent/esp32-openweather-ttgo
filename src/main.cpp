@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include <SPI.h>
-//#include <FS.h>
 // Setting for the display are defined in platformio.ini
 #include <TFT_eSPI.h>
 
