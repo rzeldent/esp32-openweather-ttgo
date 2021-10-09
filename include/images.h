@@ -8,6 +8,7 @@
 #define IMAGE_TRANSPARTENT_COLOR	0x0000
 
 const extern tImage image_openweather;
+const extern tImage image_no_internet;
 const extern tImage image_temperature;
 const extern tImage image_humidity;
 
