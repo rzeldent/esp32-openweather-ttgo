@@ -17,7 +17,7 @@ Update these variables in .settings file (notice the dot). The settings.h file i
 
 I use Visual Studio Code and PlatformIO to edit and upload the sketches. Install these, open the project folder and upload to the esp32-ttgo module using the USB-C connector. 
 
-Current state: ![assets/hardware.png](https://github.com/rzeldent/esp32-openweather-TTGO/blob/develop/hardware.png)
+Current state: ![TTGO Display](assets/hardware.png)
 
 At the moment the basic functionality is working: Time is updated, API is queried and temperature, humidity, pressure, weather description and icons are shown. So it is functioning and can be used immediately!
 
