@@ -1,27 +1,21 @@
 #pragma once
 
-#include <timage.h>
+#include <image.h>
 
-// https://github.com/pavius/the-dot-factory
-// https://github.com/amitjakhu/dripicons-weather
-
-#define IMAGE_TRANSPARTENT_COLOR	0x0000
-
-const extern tImage image_openweather;
-const extern tImage image_no_internet;
-const extern tImage image_temperature;
-const extern tImage image_humidity;
-
-const extern tImage image_01d;
-const extern tImage image_01n;
-const extern tImage image_02d;
-const extern tImage image_02n;
-const extern tImage image_03d;
-const extern tImage image_03n;
-const extern tImage image_04;
-const extern tImage image_09;
-const extern tImage image_10d;
-const extern tImage image_10n;
-const extern tImage image_11;
-const extern tImage image_13;
-const extern tImage image_50;
+extern const image_t image_01d;
+extern const image_t image_01n;
+extern const image_t image_02d;
+extern const image_t image_02n;
+extern const image_t image_03d;
+extern const image_t image_03n;
+extern const image_t image_04;
+extern const image_t image_09;
+extern const image_t image_10d;
+extern const image_t image_10n;
+extern const image_t image_11;
+extern const image_t image_13;
+extern const image_t image_50;
+extern const image_t image_humidity;
+extern const image_t image_no_internet;
+extern const image_t image_openweather;
+extern const image_t image_temperature;
