@@ -13,6 +13,7 @@ output_dir = sys.argv[2]
 
 file_names = os.listdir(input_dir)
 for file_name in file_names:
+    print('Processing: ' + file_name)
 
     image_path = os.path.join(input_dir, file_name)
     base_name = os.path.splitext(file_name)[0]
@@ -38,20 +39,22 @@ for file_name in file_names:
     output_file.write('\n')
     output_file.write('static const uint16_t ' + image_data_name + '[' + str(height * width) + '] = {\n')
 
-    convert_RGB_to_656 = lambda rgb: (rgb[0] >> 3) << 10 | (rgb[1] >> 3) << 5 | (rgb[2] >> 3)
+    convert_RGB_to_565 = lambda rgb: (rgb[0] >> 3) << 11 | (rgb[1] >> 2) << 5 | (rgb[2] >> 3)
 
     for y in range(0, height):
         for x in range(width):
             value = pixels[y * width + x]
-            output_file.write('0x' + hex(convert_RGB_to_656(value))[2:].zfill(4))
+            output_file.write('0x' + hex(convert_RGB_to_565(value))[2:].zfill(4))
             if (y*width+x < width*height - 1):
                 output_file.write(',')
         output_file.write('\n')
 
     output_file.write('};\n')
+    output_file.write('\n')
 
-    output_file.write('const tImage ' + base_name +
-                      ' = { ' + image_data_name + ',' + str(width) + ',' + str(height) + ',16 };\n')
+    output_file.write('const tImage ' + base_name + ' = { ' + image_data_name + ',' + str(width) + ',' + str(height) + ',16 };\n')
 
     output_file.close()
     image.close()
+
+print('Done.')
