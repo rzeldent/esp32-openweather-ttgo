@@ -1,14 +1,14 @@
 #pragma once
 
-#include <timage.h>
+#include <image.h>
 
 typedef struct
 {
 	uint16_t	id;
 	const char* main;
 	const char* description;
-	const tImage* imageDay;
-	const tImage* imageNight;
+	const image_t* imageDay;
+	const image_t* imageNight;
 } OpenWeatherIdt;
 
 const OpenWeatherIdt openWeatherIds[] = 

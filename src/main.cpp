@@ -31,8 +31,10 @@ Button2 button2(button_bottom);
 Timezone timeZone(dst_begin, dst_end);
 
 // Screen is 240 * 135 pixels (rotated)
-constexpr auto background_color = TFT_BLACK;
-constexpr auto text_color = TFT_WHITE;
+constexpr uint16_t background_color = TFT_BLACK;
+constexpr uint16_t text_color = TFT_WHITE;
+
+constexpr uint16_t color_transparent = TFT_BLACK;
 
 #define WEATHER_ICON_WIDTH 75
 #define WEATHER_ICON_HEIGHT 75
@@ -134,10 +136,10 @@ void loop()
       tft.fillRect(0, BOTTOM_BAR_Y, TFT_HEIGHT, BOTTOM_BAR_HEIGHT, background_color);
 
       // Draw the temperature and humidity icons
-      tft.pushImage(MAIN_BAR_TEMPERATURE_ICON_X, MAIN_BAR_TEMPERATURE_Y, image_temperature.width, image_temperature.height, image_temperature.data, IMAGE_TRANSPARTENT_COLOR);
+      tft.pushImage(MAIN_BAR_TEMPERATURE_ICON_X, MAIN_BAR_TEMPERATURE_Y, image_temperature.width, image_temperature.height, image_temperature.data, color_transparent);
       // Fix for degrees symbol : ° is ` in library (only 16pt font)
       tft.drawCentreString("`C", MAIN_BAR_TEMPERATURE_ICON_X + image_temperature.width / 2, MAIN_BAR_TEMPERATURE_Y + image_temperature.height, font_10pt);
-      tft.pushImage(MAIN_BAR_HUMIDITY_ICON_X, MAIN_BAR_HUMIDITY_Y, image_humidity.height, image_humidity.height, image_humidity.data, IMAGE_TRANSPARTENT_COLOR);
+      tft.pushImage(MAIN_BAR_HUMIDITY_ICON_X, MAIN_BAR_HUMIDITY_Y, image_humidity.height, image_humidity.height, image_humidity.data, color_transparent);
       tft.drawCentreString("%R", MAIN_BAR_HUMIDITY_ICON_X + image_humidity.width / 2, MAIN_BAR_HUMIDITY_Y + image_humidity.height, font_10pt);
 
       HTTPClient client;
@@ -176,7 +178,7 @@ void loop()
           {
             tft.drawCentreString(info->description, TFT_HEIGHT / 2, BOTTOM_BAR_Y, font_10pt);
             auto image = isDay ? info->imageDay : info->imageNight;
-            tft.pushImage(MAIN_BAR_WEATHER_ICON_X, MAIN_BAR_WEATHER_ICON_Y, image->width, image->height, image->data, IMAGE_TRANSPARTENT_COLOR);
+            tft.pushImage(MAIN_BAR_WEATHER_ICON_X, MAIN_BAR_WEATHER_ICON_Y, image->width, image->height, image->data, color_transparent);
           }
 
           const auto pressure = (const float)main["pressure"];

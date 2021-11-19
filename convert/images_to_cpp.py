@@ -20,7 +20,7 @@ for file_name in file_names:
 
     image_path = os.path.join(input_dir, file_name)
     base_name = os.path.splitext(file_name)[0]
-    output_file = os.path.join(output_dir, base_name + '.cpp')
+    output_file = os.path.join(output_dir, base_name + '.c')
 
     output_file = open(output_file, 'w')
 
@@ -38,7 +38,7 @@ for file_name in file_names:
     output_file.write('// ******************************************************************************\n')
     output_file.write('\n')
 
-    output_file.write('#include <timage.h>\n')
+    output_file.write('#include <image.h>\n')
     output_file.write('\n')
     output_file.write('static const uint16_t ' + image_data_name + '[' + str(height * width) + '] = {\n')
 
@@ -55,7 +55,7 @@ for file_name in file_names:
     output_file.write('};\n')
     output_file.write('\n')
 
-    output_file.write('const tImage ' + base_name + ' = { ' + image_data_name + ',' + str(width) + ',' + str(height) + ',16 };\n')
+    output_file.write('const image_t ' + base_name + ' = { ' + image_data_name + ', ' + str(width) + ', ' + str(height) + ' };\n')
 
     output_file.close()
     image.close()
@@ -67,11 +67,11 @@ if (header_path):
 
     output_file.write('#pragma once\n')
     output_file.write('\n')
-    output_file.write('#include <timage.h>\n')
+    output_file.write('#include <image.h>\n')
     output_file.write('\n')
 
     for base_name in converted:
-        output_file.write('extern const tImage ' + base_name + ';\n')
+        output_file.write('extern const image_t ' + base_name + ';\n')
 
 
     output_file.close()
