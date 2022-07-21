@@ -27,9 +27,6 @@
 
 #include <settings.h>
 
-constexpr byte button_top = 35;
-constexpr byte button_bottom = 0;
-
 constexpr auto font_16pt = 2; // Font 2. Small 16 pixel high font, needs ~3534 bytes in FLASH, 96 characters
 constexpr auto font_26pt = 4; // Font 4. Medium 26 pixel high font, needs ~5848 bytes in FLASH, 96 characters
 constexpr auto font_48pt = 6; // Font 6. Large 48 pixel font, needs ~2666 bytes in FLASH, only characters 1234567890:-.apm
@@ -37,8 +34,8 @@ constexpr auto font_48pt = 6; // Font 6. Large 48 pixel font, needs ~2666 bytes 
 // Use hardware SPI
 auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
 
-Button2 button1(button_top);
-Button2 button2(button_bottom);
+Button2 button1(GPIO_BUTTON_TOP);
+Button2 button2(GPIO_BUTTON_BOTTOM);
 
 // Web server
 DNSServer dnsServer;
@@ -46,7 +43,7 @@ WebServer server(80);
 IotWebConf iotWebConf(WIFI_SSID, &dnsServer, &server, WIFI_PASSWORD, CONFIG_VERSION);
 
 auto param_group = iotwebconf::ParameterGroup("openweather", "Open Weather");
-auto iotWebParamOpenWeatherApiKey = iotwebconf::Builder<iotwebconf::TextTParameter<32>>("apikey").label("Open Weather API key").defaultValue(DEFAULT_OPENWEATHER_API_KEY).build();
+auto iotWebParamOpenWeatherApiKey = iotwebconf::Builder<iotwebconf::TextTParameter<33>>("apikey").label("Open Weather API key").defaultValue(DEFAULT_OPENWEATHER_API_KEY).build();
 auto iotWebParamLocation = iotwebconf::Builder<iotwebconf::TextTParameter<64>>("location").label("Location").defaultValue(DEFAULT_LOCATION).build();
 auto iotWebParamTimeZone = iotwebconf::Builder<iotwebconf::SelectTParameter<sizeof(timezonelocation_t)>>("timezone").label("Choose timezone").optionValues((const char *)&timezonedb->location).optionNames((const char *)&timezonedb->location).optionCount(sizeof(timezonedb) / sizeof(timezonedb[0])).nameLength(sizeof(timezonelocation_t)).defaultValue(DEFAULT_TIMEZONE).build();
 auto iotWebParamMetric = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("metric").label("Use metric units").defaultValue(DEFAULT_METRIC).build();
@@ -54,8 +51,7 @@ auto iotWebParamMetric = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("me
 // Screen is 240 * 135 pixels (rotated)
 constexpr uint16_t background_color = TFT_BLACK;
 constexpr uint16_t text_color = TFT_WHITE;
-
-constexpr uint16_t color_transparent = TFT_BLACK;
+constexpr uint16_t image_color_transparent = TFT_WHITE;
 
 #define WEATHER_ICON_WIDTH 75
 #define WEATHER_ICON_HEIGHT 75
@@ -219,6 +215,13 @@ void setup()
   tft.drawString(iotWebParamLocation.value(), TOP_BAR_LOCATION_X, TOP_BAR_Y, font_16pt);
 }
 
+void clear()
+{
+  log_d("Clear screen");
+  tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, background_color);
+  tft.setCursor(0, 0);
+}
+
 void display_network_state(iotwebconf::NetworkState state)
 {
   log_i("Network state: %d", state);
@@ -239,8 +242,6 @@ void display_network_state(iotwebconf::NetworkState state)
     image_data = z_image_decode(&image_open_weather);
     tft.pushImage(0, 0, image_open_weather.width, image_open_weather.height, image_data);
     delete[] image_data;
-    tft.setTextFont(font_26pt);
-    tft.print(APP_TITLE " v" APP_VERSION);
     break;
   case iotwebconf::OffLine:
     // Show Dinosaur / cactus image
@@ -248,13 +249,17 @@ void display_network_state(iotwebconf::NetworkState state)
     tft.pushImage(0, 0, image_no_internet.width, image_no_internet.height, image_data);
     delete[] image_data;
     break;
+  case iotwebconf::OnLine:
+    clear();
+    // Set the location, Font(4) = 26px
+    tft.drawString(iotWebParamLocation.value(), TOP_BAR_LOCATION_X, TOP_BAR_Y, font_16pt);
+    break;
   }
 }
 
 void update_time()
 {
   tft.fillRect(TOP_BAR_TIME_X, TOP_BAR_Y, TOP_BAR_TIME_WIDTH, TOP_BAR_HEIGHT, background_color);
-
   // Display time
   struct tm timeinfo;
   getLocalTime(&timeinfo);
@@ -275,24 +280,25 @@ void update_weather()
   unsigned short *image_data;
   // Draw the temperature and humidity icons
   image_data = z_image_decode(&image_temperature);
-  tft.pushImage(MAIN_BAR_TEMPERATURE_ICON_X, MAIN_BAR_TEMPERATURE_Y, image_temperature.width, image_temperature.height, image_data, color_transparent);
+  tft.pushImage(MAIN_BAR_TEMPERATURE_ICON_X, MAIN_BAR_TEMPERATURE_Y, image_temperature.width, image_temperature.height, image_data, image_color_transparent);
   delete[] image_data;
   // Fix for degrees symbol : ° is ` in library (only 16pt font)
-  tft.drawCentreString("`C", MAIN_BAR_TEMPERATURE_ICON_X + image_temperature.width / 2, MAIN_BAR_TEMPERATURE_Y + image_temperature.height, font_16pt);
+  const auto temperature_unit = iotWebParamMetric.value() ? "`C" : "`F";
+  tft.drawCentreString(temperature_unit, MAIN_BAR_TEMPERATURE_ICON_X + image_temperature.width / 2, MAIN_BAR_TEMPERATURE_Y + image_temperature.height, font_16pt);
 
   image_data = z_image_decode(&image_humidity);
-  tft.pushImage(MAIN_BAR_HUMIDITY_ICON_X, MAIN_BAR_HUMIDITY_Y, image_humidity.height, image_humidity.height, image_data, color_transparent);
+  tft.pushImage(MAIN_BAR_HUMIDITY_ICON_X, MAIN_BAR_HUMIDITY_Y, image_humidity.height, image_humidity.height, image_data, image_color_transparent);
   delete[] image_data;
   tft.drawCentreString("%R", MAIN_BAR_HUMIDITY_ICON_X + image_humidity.width / 2, MAIN_BAR_HUMIDITY_Y + image_humidity.height, font_16pt);
 
+  auto request_units = iotWebParamMetric.value() ? "metric" : "imperial";
   HTTPClient client;
-  client.begin(String("http://api.openweathermap.org/data/2.5/weather?q=") + iotWebParamLocation.value() + "&appid=" + iotWebParamOpenWeatherApiKey.value() + "&units=metric");
+  client.begin(String("https://api.openweathermap.org/data/2.5/weather?q=") + iotWebParamLocation.value() + "&appid=" + iotWebParamOpenWeatherApiKey.value() + "&units=" + request_units);
   auto code = client.GET();
   if (code == HTTP_CODE_OK)
   {
     const auto response = client.getString().c_str();
     DynamicJsonDocument doc(2048);
-
     // Parse JSON object
     const auto error = deserializeJson(doc, response);
     if (!error)
@@ -306,12 +312,15 @@ void update_weather()
       tft.drawString(temperatureString, MAIN_BAR_TEMPERATURE_X, MAIN_BAR_TEMPERATURE_Y, font_48pt);
       tft.drawString(humidityString, MAIN_BAR_HUMIDITY_X, MAIN_BAR_HUMIDITY_Y, font_48pt);
 
-      auto dt = (const uint32_t)doc["dt"];
+      const auto dt = (const uint32_t)doc["dt"];
       const auto sys = doc["sys"];
-      const auto isDay = dt > (const uint32_t)sys["sunrise"] && dt < (const uint32_t)sys["sunset"];
-
+      const auto sunrise = (const uint32_t)sys["sunrise"];
+      const auto sunset = (const uint32_t)sys["sunset"];
+      const auto isDay = dt > sunrise && dt < sunset;
       const auto weather = doc["weather"];
       const auto id = (const uint16_t)weather[0]["id"];
+      log_i("dt=%d, sunrise=%d, sunset=%d, weather=%d", dt, sunrise, sunset, id);
+
       // Lookup weather code
       auto info = (const OpenWeatherIdt *)&openWeatherIds;
       while (info->id && info->id != id)
@@ -322,9 +331,11 @@ void update_weather()
         tft.drawCentreString(info->description, TFT_HEIGHT / 2, BOTTOM_BAR_Y, font_16pt);
         auto image = isDay ? info->imageDay : info->imageNight;
         image_data = z_image_decode(image);
-        tft.pushImage(MAIN_BAR_WEATHER_ICON_X, MAIN_BAR_WEATHER_ICON_Y, image->width, image->height, image_data, color_transparent);
+        tft.pushImage(MAIN_BAR_WEATHER_ICON_X, MAIN_BAR_WEATHER_ICON_Y, image->width, image->height, image_data, image_color_transparent);
         delete[] image_data;
       }
+      else
+        log_e("Unknown weather code: %d", id);
 
       const auto pressure = (const float)main["pressure"];
       tft.drawRightString(String((const int)pressure) + " hpa", TFT_HEIGHT, MAIN_BAR_PRESSURE_Y, font_16pt);
@@ -359,12 +370,12 @@ void loop()
     break;
 
   case iotwebconf::NetworkState::OnLine:
-    if (next_update_clock > now)
+    if (now > next_update_clock)
     {
       update_time();
       next_update_clock = now + time_update_milliseconds;
     }
-    if (next_refresh_weather > now)
+    if (now > next_refresh_weather)
     {
       update_weather();
       next_refresh_weather = now + weather_update_milliseconds;
