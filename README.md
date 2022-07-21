@@ -1,4 +1,7 @@
 # esp32-openweather-TTGO
+
+[![Platform IO CI](https://github.com/rzeldent/esp32-openweather-ttgo/actions/workflows/main.yml/badge.svg)](https://github.com/rzeldent/esp32-openweather-ttgo/actions/workflows/main.yml)
+
 openweathermap.org interface for the [TTGO-T-Display](https://github.com/Xinyuan-LilyGO/TTGO-T-Display/blob/master/TTGO-T-Display.ino) ESP32 Module.
 
 **Work in progress** but fully functional but always open for suggestions / branches!

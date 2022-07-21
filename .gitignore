@@ -1,4 +1,5 @@
-# Hidden folders
-.*
-./
+.*/*
+.*.*
+*.log
+.DS_Store
 workspace.code-workspace
