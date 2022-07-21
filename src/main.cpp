@@ -86,9 +86,9 @@ void setup()
   tft.setTextColor(text_color);
 
   // Show OpenWeather welcome screen / logo
-  tft.pushImage(0, 0, image_openweather.width, image_openweather.height, image_openweather.data);
+  tft.pushImage(0, 0, image_open_weather.width, image_open_weather.height, image_open_weather.data);
 
-  log_i("Connecting to accesspoint: %s", wifi_ssid);
+  log_i("Connecting to access point: %s", wifi_ssid);
   WiFi.mode(WIFI_STA);
   WiFi.begin(wifi_ssid, wifi_password);
   log_w("Waiting for WiFi connection");

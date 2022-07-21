@@ -1,3 +1,8 @@
-import subprocess
+Import('env')
 
-subprocess.call('python3 ./convert/images_to_cpp.py ./images ./src/images.c ./include/images.h')
+#print(env.Dump())
+
+print('convert_images')
+env.Execute("$PYTHONEXE -m pip install Pillow")
+env.Execute("$PYTHONEXE $PROJECT_DIR/convert/images_to_cpp.py $PROJECT_DIR/images $PROJECT_DIR/src/images.c $PROJECT_DIR/include/images.h")
+print('convert_images done')
