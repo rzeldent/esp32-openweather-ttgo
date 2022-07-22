@@ -4,6 +4,11 @@
 
 openweathermap.org interface for the [TTGO-T-Display](https://github.com/Xinyuan-LilyGO/TTGO-T-Display/blob/master/TTGO-T-Display.ino) ESP32 Module.
 
+
+from: https://www.dovora.com/resources/weather-icons/
+Modern Weather Icon Pack
+
+
 **Work in progress** but fully functional but always open for suggestions / branches!
 
 ## Hardware

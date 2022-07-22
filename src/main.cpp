@@ -20,10 +20,13 @@
 
 #include <zimage.h>
 #include <timezonedb.h>
-#include <OpenWeatherId.h>
+#include <images.h>
+#include <weather_types.h>
 
 #include <format_duration.h>
 #include <format_si.h>
+
+#include <http_status.h>
 
 #include <settings.h>
 
@@ -272,75 +275,98 @@ void update_time()
   tft.drawString(time_buffer, TOP_BAR_TIME_X, TOP_BAR_Y, font_26pt);
 }
 
+void display_error(const String &message)
+{
+  auto image_data = z_image_decode(&image_error);
+  tft.pushImage(0, MAIN_BAR_Y, image_error.width, image_error.height, image_data);
+  delete[] image_data;
+
+  tft.fillRect(0, BOTTOM_BAR_Y, TFT_HEIGHT, BOTTOM_BAR_HEIGHT, background_color);
+  tft.drawCentreString(message, TFT_HEIGHT / 2, BOTTOM_BAR_Y, font_16pt);
+}
+
 void update_weather()
 {
-  tft.fillRect(0, MAIN_BAR_Y, TFT_HEIGHT, MAIN_BAR_HEIGHT, background_color);
-  tft.fillRect(0, BOTTOM_BAR_Y, TFT_HEIGHT, BOTTOM_BAR_HEIGHT, background_color);
-
   unsigned short *image_data;
-  // Draw the temperature and humidity icons
-  image_data = z_image_decode(&image_temperature);
-  tft.pushImage(MAIN_BAR_TEMPERATURE_ICON_X, MAIN_BAR_TEMPERATURE_Y, image_temperature.width, image_temperature.height, image_data, image_color_transparent);
-  delete[] image_data;
-  // Fix for degrees symbol : ° is ` in library (only 16pt font)
-  const auto temperature_unit = iotWebParamMetric.value() ? "`C" : "`F";
-  tft.drawCentreString(temperature_unit, MAIN_BAR_TEMPERATURE_ICON_X + image_temperature.width / 2, MAIN_BAR_TEMPERATURE_Y + image_temperature.height, font_16pt);
-
-  image_data = z_image_decode(&image_humidity);
-  tft.pushImage(MAIN_BAR_HUMIDITY_ICON_X, MAIN_BAR_HUMIDITY_Y, image_humidity.height, image_humidity.height, image_data, image_color_transparent);
-  delete[] image_data;
-  tft.drawCentreString("%R", MAIN_BAR_HUMIDITY_ICON_X + image_humidity.width / 2, MAIN_BAR_HUMIDITY_Y + image_humidity.height, font_16pt);
-
   auto request_units = iotWebParamMetric.value() ? "metric" : "imperial";
   HTTPClient client;
   client.begin(String("https://api.openweathermap.org/data/2.5/weather?q=") + iotWebParamLocation.value() + "&appid=" + iotWebParamOpenWeatherApiKey.value() + "&units=" + request_units);
   auto code = client.GET();
-  if (code == HTTP_CODE_OK)
+  // Check if request went OK
+  if (code != HTTP_CODE_OK)
   {
-    const auto response = client.getString().c_str();
-    DynamicJsonDocument doc(2048);
-    // Parse JSON object
-    const auto error = deserializeJson(doc, response);
-    if (!error)
-    {
-      const auto main = doc["main"];
-      auto temperature = (const float)main["temp"];
-      auto humidity = (const uint8_t)main["humidity"];
-
-      auto temperatureString = String(temperature, 1);
-      auto humidityString = String(humidity);
-      tft.drawString(temperatureString, MAIN_BAR_TEMPERATURE_X, MAIN_BAR_TEMPERATURE_Y, font_48pt);
-      tft.drawString(humidityString, MAIN_BAR_HUMIDITY_X, MAIN_BAR_HUMIDITY_Y, font_48pt);
-
-      const auto dt = (const uint32_t)doc["dt"];
-      const auto sys = doc["sys"];
-      const auto sunrise = (const uint32_t)sys["sunrise"];
-      const auto sunset = (const uint32_t)sys["sunset"];
-      const auto isDay = dt > sunrise && dt < sunset;
-      const auto weather = doc["weather"];
-      const auto id = (const uint16_t)weather[0]["id"];
-      log_i("dt=%d, sunrise=%d, sunset=%d, weather=%d", dt, sunrise, sunset, id);
-
-      // Lookup weather code
-      auto info = (const OpenWeatherIdt *)&openWeatherIds;
-      while (info->id && info->id != id)
-        ++info;
-
-      if (info->id)
-      {
-        tft.drawCentreString(info->description, TFT_HEIGHT / 2, BOTTOM_BAR_Y, font_16pt);
-        auto image = isDay ? info->imageDay : info->imageNight;
-        image_data = z_image_decode(image);
-        tft.pushImage(MAIN_BAR_WEATHER_ICON_X, MAIN_BAR_WEATHER_ICON_Y, image->width, image->height, image_data, image_color_transparent);
-        delete[] image_data;
-      }
-      else
-        log_e("Unknown weather code: %d", id);
-
-      const auto pressure = (const float)main["pressure"];
-      tft.drawRightString(String((const int)pressure) + " hpa", TFT_HEIGHT, MAIN_BAR_PRESSURE_Y, font_16pt);
-    }
+    log_e("OpenWeatherMap API error: %d", code);
+    auto message = String(code) + " " + http_status_reason(code);
+    display_error(message);
+    client.end();
+    return;
   }
+
+  // Check if deserialization worked
+  DynamicJsonDocument doc(2048);
+  // Parse JSON object
+  const auto error = deserializeJson(doc, client.getString());
+  if (error)
+  {
+    log_e("Deserialize JSon error: %s", error.c_str());
+    auto message = error.c_str();
+    display_error(message);
+    client.end();
+    return;
+  }
+
+  const auto main = doc["main"];
+  const auto temperature = (const float)main["temp"];
+  const auto humidity = (const uint8_t)main["humidity"];
+  const auto datetime = (const uint32_t)doc["dt"];
+  const auto sys = doc["sys"];
+  const auto sunrise = (const uint32_t)sys["sunrise"];
+  const auto sunset = (const uint32_t)sys["sunset"];
+  const auto weather = doc["weather"];
+  const auto id = (const uint16_t)weather[0]["id"];
+  const auto pressure = (const float)main["pressure"];
+  log_i("datetime=%d, sunrise=%d, sunset=%d, weather=%d, pressure=%d", datetime, sunrise, sunset, id, pressure);
+
+  const auto isDay = datetime > sunrise && datetime < sunset;
+  const auto isWarm = temperature > (iotWebParamMetric.value() ? WARM_TEMPERATURE_CENTIGRADE : WARM_TEMPERATURE_FAHRENHEIT);
+
+  tft.fillRect(0, MAIN_BAR_Y, TFT_HEIGHT, MAIN_BAR_HEIGHT, background_color);
+  tft.fillRect(0, BOTTOM_BAR_Y, TFT_HEIGHT, BOTTOM_BAR_HEIGHT, background_color);
+
+  // Draw the temperature and humidity icons
+  const auto temperature_icon = isWarm ? &image_temperature_warm : &image_temperature_cold;
+  image_data = z_image_decode(temperature_icon);
+  tft.pushImage(MAIN_BAR_TEMPERATURE_ICON_X, MAIN_BAR_TEMPERATURE_Y, temperature_icon->width, temperature_icon->height, image_data, image_color_transparent);
+  delete[] image_data;
+  // Fix for degrees symbol : ° is ` in library (only 16pt font)
+  // const auto temperature_unit = iotWebParamMetric.value() ? "`C" : "`F";
+  // tft.drawCentreString(temperature_unit, MAIN_BAR_TEMPERATURE_ICON_X + image_temperature.width / 2, MAIN_BAR_TEMPERATURE_Y + image_temperature.height, font_16pt);
+  image_data = z_image_decode(&image_humidity);
+  tft.pushImage(MAIN_BAR_HUMIDITY_ICON_X, MAIN_BAR_HUMIDITY_Y, image_humidity.width, image_humidity.height, image_data, image_color_transparent);
+  delete[] image_data;
+  // tft.drawCentreString("%R", MAIN_BAR_HUMIDITY_ICON_X + image_humidity.width / 2, MAIN_BAR_HUMIDITY_Y + image_humidity.height, font_16pt);
+
+  // Celcius, accuracy 0.1, Imperial has no fraction
+  auto temperatureString = iotWebParamMetric.value() ? String(temperature, 1) : String(temperature, 0);
+  auto humidityString = String(humidity);
+  tft.drawString(temperatureString, MAIN_BAR_TEMPERATURE_X, MAIN_BAR_TEMPERATURE_Y, font_48pt);
+  tft.drawString(humidityString, MAIN_BAR_HUMIDITY_X, MAIN_BAR_HUMIDITY_Y, font_48pt);
+
+  // Lookup weather code
+  auto info = lookup_weather_code(id);
+  if (info)
+  {
+    tft.drawCentreString(info->description, TFT_HEIGHT / 2, BOTTOM_BAR_Y, font_16pt);
+    auto image = isDay ? info->imageDay : info->imageNight;
+    auto image_data = z_image_decode(image);
+    tft.pushImage(MAIN_BAR_WEATHER_ICON_X, MAIN_BAR_WEATHER_ICON_Y, image->width, image->height, image_data, image_color_transparent);
+    delete[] image_data;
+  }
+  else
+    log_e("Unknown weather code: %d", id);
+
+  tft.drawRightString(String((const int)pressure) + " hpa", TFT_HEIGHT, MAIN_BAR_PRESSURE_Y, font_16pt);
+
   client.end();
 }
 

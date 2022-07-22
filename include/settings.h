@@ -19,6 +19,9 @@
 // Openweathermap location and subscription id. Create an account at www.openweathermap.org to obtain an id.
 #define DEFAULT_OPENWEATHER_API_KEY  ""
 
+#define WARM_TEMPERATURE_CENTIGRADE 20
+#define WARM_TEMPERATURE_FAHRENHEIT 68
+
 // Every 2 minutes update the display
 constexpr auto weather_update_milliseconds = 120000ul;
 
