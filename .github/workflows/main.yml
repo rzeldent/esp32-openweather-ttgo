@@ -17,9 +17,6 @@ jobs:
           ./generate_images.sh
       - name: Install PlatformIO
         run: python -m pip install platformio
-      - name: Set default .settings.h
-        run: |
-          cp ./include/settings.h ./include/.settings.h
       - name: Build firmware
         run: platformio run
       - name: Archive
