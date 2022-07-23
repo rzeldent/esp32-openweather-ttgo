@@ -143,6 +143,7 @@ void handleRoot()
   html += "</ul>";
   html += "<h3>Settings</h3>";
   html += "<ul>";
+  html += "<li>Access point: " + String(iotWebConf.getWifiSsidParameter()->valueBuffer) + "</li>";
   html += "<li>Location: " + String(iotWebParamLocation.value()) + "</li>";
   html += "<li>API key: " + String(iotWebParamOpenWeatherApiKey.value()) + "</li>";
   html += "<li>Time zone: " + String(iotWebParamTimeZone.value()) + " (" + timezonedb_get_definition(iotWebParamTimeZone.value()) + ")" + "</li>";
