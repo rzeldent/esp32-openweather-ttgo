@@ -1,23 +1,29 @@
 #pragma once
 
-#include <Timezone.h> // https://github.com/JChristensen/Timezone
+#define APP_TITLE "OpenWeather"
+#define APP_VERSION "1.0"
 
-// The SSID and password of the accesspoint to connect to
-constexpr auto wifi_ssid = "<your wifi ssid>";
-constexpr auto wifi_password = "<your wifi password>";
+#define WIFI_SSID "OpenWeather"
+#define WIFI_PASSWORD nullptr
+#define CONFIG_VERSION "1.0"
 
-// There must always be 3 NTP servers. Remove or replace by null if not required
-constexpr auto ntp_server_1 = "europe.pool.ntp.org";
-constexpr auto ntp_server_2 = "0.pool.ntp.org";
-constexpr auto ntp_server_3 = "1.pool.ntp.org";
+// Time servers
+#define NTP_SERVER_1 "nl.pool.ntp.org"
+#define NTP_SERVER_2 "europe.pool.ntp.org"
+#define NTP_SERVER_3 "time.nist.gov"
+#define NTP_SERVERS NTP_SERVER_1, NTP_SERVER_2, NTP_SERVER_3
 
-// DST start and end (Central European Standard Time)
-constexpr TimeChangeRule dst_begin = {"CEST", Last, Sun, Mar, 2, 120};
-constexpr TimeChangeRule dst_end = {"CET ", Last, Sun, Oct, 3, 60};
-
+#define DEFAULT_LOCATION "Amsterdam"
+#define DEFAULT_TIMEZONE "Europe/Amsterdam"
+#define DEFAULT_METRIC true
 // Openweathermap location and subscription id. Create an account at www.openweathermap.org to obtain an id.
-constexpr auto openweathermap_location = "Amsterdam";
-constexpr auto openweathermap_api_id = "<your api key>";
+#define DEFAULT_OPENWEATHER_API_KEY  ""
+
+#define WARM_TEMPERATURE_CENTIGRADE 20
+#define WARM_TEMPERATURE_FAHRENHEIT 68
 
 // Every 2 minutes update the display
 constexpr auto weather_update_milliseconds = 120000ul;
+
+// Every second update the time
+constexpr auto time_update_milliseconds = 1000ul;
