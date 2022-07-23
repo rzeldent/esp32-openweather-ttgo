@@ -36,6 +36,7 @@ constexpr auto font_48pt = 6; // Font 6. Large 48 pixel font, needs ~2666 bytes 
 
 // Use hardware SPI
 auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
+auto clock_sprite = TFT_eSprite(&tft);
 
 Button2 button1(GPIO_BUTTON_TOP);
 Button2 button2(GPIO_BUTTON_BOTTOM);
@@ -187,6 +188,11 @@ void setup()
   tft.setTextDatum(TL_DATUM); // Top Left
   tft.setTextColor(text_color);
 
+  // Create sprite for clock. 1 bit depth
+  clock_sprite.setColorDepth(1);
+  clock_sprite.createSprite(TOP_BAR_TIME_WIDTH, TOP_BAR_HEIGHT);
+  clock_sprite.setTextColor(text_color);
+
   // Initializing the configuration for web configuration
   param_group.addItem(&iotWebParamLocation);
   param_group.addItem(&iotWebParamOpenWeatherApiKey);
@@ -263,17 +269,18 @@ void display_network_state(iotwebconf::NetworkState state)
 
 void update_time()
 {
-  tft.fillRect(TOP_BAR_TIME_X, TOP_BAR_Y, TOP_BAR_TIME_WIDTH, TOP_BAR_HEIGHT, background_color);
   // Display time
-  struct tm timeinfo;
-  getLocalTime(&timeinfo);
+  struct tm tm;
+  getLocalTime(&tm);
   char time_buffer[20];
   if (time_valid())
-    strftime(time_buffer, sizeof(time_buffer), "%T", &timeinfo);
+    strftime(time_buffer, sizeof(time_buffer), "%T", &tm);
   else
-    strcpy(time_buffer, "--:--:--");
+    strcpy(time_buffer, "##:##:##");
 
-  tft.drawString(time_buffer, TOP_BAR_TIME_X, TOP_BAR_Y, font_26pt);
+  clock_sprite.fillSprite(background_color);
+  clock_sprite.drawRightString(time_buffer, TOP_BAR_TIME_WIDTH, 0, font_26pt);
+  clock_sprite.pushSprite(TOP_BAR_TIME_X, TOP_BAR_Y);
 }
 
 void display_error(const String &message)
