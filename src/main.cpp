@@ -298,7 +298,15 @@ void update_weather()
   unsigned short *image_data;
   auto request_units = iotWebParamMetric.value() ? "metric" : "imperial";
   HTTPClient client;
-  client.begin(String("https://api.openweathermap.org/data/2.5/weather?q=") + iotWebParamLocation.value() + "&appid=" + iotWebParamOpenWeatherApiKey.value() + "&units=" + request_units);
+  if (!client.begin(String("https://api.openweathermap.org/data/2.5/weather?q=") + iotWebParamLocation.value() + "&appid=" + iotWebParamOpenWeatherApiKey.value() + "&units=" + request_units))
+  {
+    auto message = "Failed to start HTTP client. DNS/TCP?";
+    log_e("%s", message);
+    display_error(message);
+    client.end();
+    return;
+  }
+
   auto code = client.GET();
   // Check if request went OK
   if (code != HTTP_CODE_OK)
