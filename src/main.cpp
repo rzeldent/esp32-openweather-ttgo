@@ -304,7 +304,7 @@ void update_weather()
   if (code != HTTP_CODE_OK)
   {
     log_e("OpenWeatherMap API error: %d", code);
-    auto message = String(code) + " " + http_status_reason(code);
+    auto message = String(code) + " " + (code < 0 ? client.errorToString(code) : http_status_reason(code));
     display_error(message);
     client.end();
     return;
