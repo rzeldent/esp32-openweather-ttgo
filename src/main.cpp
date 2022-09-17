@@ -24,7 +24,7 @@
 #include <weather_types.h>
 
 #include <format_duration.h>
-#include <format_si.h>
+#include <format_number.h>
 
 #include <http_status.h>
 
@@ -154,7 +154,7 @@ void handleRoot()
   html += "<ul>";
   html += "<li>Current time: " + String(time_buffer) + " (Local)</li>";
   html += "<li>Uptime: " + String(format_duration(millis() / 1000)) + "</li>";
-  html += "<li>Free heap: " + format_si(ESP.getFreeHeap()) + "b</li>";
+  html += "<li>Free heap: " + format_memory(ESP.getFreeHeap()) + "</li>";
   html += "</ul>";
   html += "<br/>Go to <a href=\"config\">configure page</a> to change settings.";
   html += "</body></html>";
