@@ -218,6 +218,7 @@ void setup()
   auto tz_definition = timezonedb_get_definition(iotWebParamTimeZone.value());
   setenv("TZ", tz_definition, 1);
   tzset();
+  log_i("Set timezone to %s (%s)", iotWebParamTimeZone.value(), tz_definition);
 
   // Clear the screen
   tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, background_color);
