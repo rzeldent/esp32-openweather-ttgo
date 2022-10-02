@@ -15,7 +15,7 @@ Install these, open the project folder and upload to the esp32-ttgo module using
 Current state: ![TTGO Display](assets/hardware.png)
 
 ## Configuration
-Make a connection to the Accesspoint "OpenWeather". The first time you can connect without a wifi password.
+Make a connection to the access point "OpenWeather". The first time you can connect without a wifi password.
 
 Here, in the menu, update the settings:
 
@@ -26,20 +26,26 @@ Here, in the menu, update the settings:
 
 There is also an option to use an alternative weather icon pack. This can be changed by the batch job to generate the icons.
 
+# Status
+The status is visible when connecting to the device using a web browser.
+This page shows the status of the device, network and settings.
+
+![Status](assets/status.png)
+
 ## Current state
 At the moment the basic functionality is working: 
- - Time is updated
+ - Time is updated, with timzones
  - API is queried and temperature, humidity, pressure, weather description and icons are shown.
+ - Web Status GUI and configuration GUI
 
 However, there are still two buttons left on the TTGO-T-Display so room for improvement like:
-- Setup using these buttons?
 - Humidity and temperature icons have some dithering pixels. New images?
 - Provide historical information about temperature / humidity / pressure and graph it.
 - Provide a weather forecast?
 
-## Collobaoration
+## Collaboration
 New features / pull requests are welcome.
-Please make a branch and, after checing it might be put into the main branch!
+Please make a branch and, after checking it might be put into the main branch!
 
 ### Thanks
 Used icons from: https://www.dovora.com/resources/weather-icons/
