@@ -1,4 +1,4 @@
-# esp32-openweather-TTGO
+# ESP32 openweather TTGO
 
 [![Platform IO CI](https://github.com/rzeldent/esp32-openweather-ttgo/actions/workflows/main.yml/badge.svg)](https://github.com/rzeldent/esp32-openweather-ttgo/actions/workflows/main.yml)
 
@@ -24,6 +24,8 @@ Here, in the menu, update the settings:
 - TimeZone. The timezone to display the correct (local) time and DST.
 - Use metric units. The choice to use Imperial or Metric settings for the temperature etc...
 
+To reset the configuration press the top button while restarting.
+
 There is also an option to use an alternative weather icon pack. This can be changed by the batch job to generate the icons.
 
 # Status
@@ -36,7 +38,7 @@ This page shows the status of the device, network and settings.
 At the moment the basic functionality is working: 
  - Time is updated, with timzones
  - API is queried and temperature, humidity, pressure, weather description and icons are shown.
- - Web Status GUI and configuration GUI
+ - Web browser configuration and status screen
 
 However, there are still two buttons left on the TTGO-T-Display so room for improvement like:
 - Humidity and temperature icons have some dithering pixels. New images?
