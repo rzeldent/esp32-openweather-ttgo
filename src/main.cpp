@@ -18,17 +18,22 @@
 #include <IotWebConf.h>
 #include <IotWebConfTParameter.h>
 
+#include <moustache.h>
+
 #include <zimage.h>
-#include <timezonedb.h>
 #include <images.h>
 #include <weather_types.h>
 
+#include <timezonedb_lookup.h>
 #include <format_duration.h>
 #include <format_number.h>
 
 #include <http_status.h>
 
 #include <settings.h>
+
+#include <html_data.h>
+#include <html_data_gzip.h>
 
 constexpr auto font_16pt = 2; // Font 2. Small 16 pixel high font, needs ~3534 bytes in FLASH, 96 characters
 constexpr auto font_26pt = 4; // Font 4. Medium 26 pixel high font, needs ~5848 bytes in FLASH, 96 characters
@@ -49,7 +54,7 @@ IotWebConf iotWebConf(WIFI_SSID, &dnsServer, &server, WIFI_PASSWORD, CONFIG_VERS
 auto param_group = iotwebconf::ParameterGroup("openweather", "Open Weather");
 auto iotWebParamOpenWeatherApiKey = iotwebconf::Builder<iotwebconf::TextTParameter<33>>("apikey").label("Open Weather API key").defaultValue(DEFAULT_OPENWEATHER_API_KEY).build();
 auto iotWebParamLocation = iotwebconf::Builder<iotwebconf::TextTParameter<64>>("location").label("Location").defaultValue(DEFAULT_LOCATION).build();
-auto iotWebParamTimeZone = iotwebconf::Builder<iotwebconf::SelectTParameter<sizeof(timezonelocation_t)>>("timezone").label("Choose timezone").optionValues((const char *)&timezonedb->location).optionNames((const char *)&timezonedb->location).optionCount(sizeof(timezonedb) / sizeof(timezonedb[0])).nameLength(sizeof(timezonelocation_t)).defaultValue(DEFAULT_TIMEZONE).build();
+auto iotWebParamTimeZone = iotwebconf::Builder<iotwebconf::SelectTParameter<sizeof(posix_timezone_names[0])>>("timezone").label("Choose timezone").optionValues((const char *)&posix_timezone_names).optionNames((const char *)&posix_timezone_names).optionCount(sizeof(posix_timezone_names) / sizeof(posix_timezone_names[0])).nameLength(sizeof(posix_timezone_names[0])).defaultValue(DEFAULT_TIMEZONE).build();
 auto iotWebParamMetric = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("metric").label("Use metric units").defaultValue(DEFAULT_METRIC).build();
 
 // Screen is 240 * 135 pixels (rotated)
@@ -98,6 +103,52 @@ constexpr uint16_t image_color_transparent = TFT_WHITE;
 #define MAIN_BAR_PRESSURE_Y (MAIN_BAR_Y + WEATHER_ICON_HEIGHT)
 #define MAIN_BAR_PRESSURE_X (TFT_HEIGHT - WEATHER_ICON_WIDTH)
 
+String get_hostname()
+{
+  // Format hostname
+  auto hostname = "esp32-" + WiFi.macAddress() + ".local";
+  hostname.replace(":", "");
+  hostname.toLowerCase();
+  return hostname;
+}
+
+bool set_timezone(const char *timezone)
+{
+  auto tz = lookup_posix_timezone_tz(timezone);
+  if (tz != nullptr)
+  {
+    setenv("TZ", tz, 1);
+    tzset();
+    log_i("Set timezone to %s (%s)", iotWebParamTimeZone.value(), tz);
+    return true;
+  }
+
+  log_e("Timezone %s not found!", iotWebParamTimeZone.value());
+  return false;
+}
+
+String get_localtime(const char *format)
+{
+  // Value of time_t for 2000-01-01 00:00:00, used to detect invalid SNTP responses.
+  constexpr time_t epoch_2000_01_01 = 946684800;
+  if (time(nullptr) < epoch_2000_01_01)
+    return "No time available";
+
+  struct tm timeinfo;
+  getLocalTime(&timeinfo);
+  char time_buffer[32];
+  strftime(time_buffer, sizeof(time_buffer), format, &timeinfo);
+  return time_buffer;
+}
+
+void send_content_gzip(const unsigned char *content, size_t length, const char *mime_type)
+{
+  server.sendHeader("Content-encoding", "gzip");
+  server.setContentLength(length);
+  server.send(200, mime_type, "");
+  server.sendContent(reinterpret_cast<const char *>(content), length);
+}
+
 bool time_valid()
 {
   // Value of time_t for 2000-01-01 00:00:00, used to detect invalid SNTP responses.
@@ -105,13 +156,10 @@ bool time_valid()
   return time(nullptr) > epoch_2000_01_01;
 }
 
-void update_runtime_config()
+void on_connected()
 {
-  log_v("update_runtime_config");
-  auto tz_definition = timezonedb_get_definition(iotWebParamTimeZone.value());
-  setenv("TZ", iotWebParamTimeZone.value(), 1);
-  tzset();
-  log_i("Set timezone to %s (%s)", iotWebParamTimeZone.value(), tz_definition);
+  log_v("on_connected");
+  set_timezone(iotWebParamTimeZone.value());
 }
 
 void handleRoot()
@@ -121,43 +169,52 @@ void handleRoot()
   if (iotWebConf.handleCaptivePortal())
     return;
 
-  struct tm timeinfo;
-  getLocalTime(&timeinfo);
-  char time_buffer[20];
-  if (time_valid())
-    strftime(time_buffer, sizeof(time_buffer), "%F %T", &timeinfo);
-  else
-    strcpy(time_buffer, "Time syncing...");
+  auto tz = lookup_posix_timezone_tz(iotWebParamTimeZone.value());
+  if (tz == nullptr)
+  {
+    log_e("Timezone %s not found!", iotWebParamTimeZone.value());
+    tz = "Unknown";
+  }
 
-  String html;
-  html += "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/>";
-  html += "<title>" APP_TITLE " v" APP_VERSION "</title></head>";
-  html += "<body>";
-  html += "<h2>Status page for " + String(iotWebConf.getThingName()) + "</h2><hr />";
-  html += "<h3>ESP32</h3>";
-  html += "<ul>";
-  html += "<li>CPU model: " + String(ESP.getChipModel()) + "</li>";
-  html += "<li>CPU speed: " + String(ESP.getCpuFreqMHz()) + "Mhz</li>";
-  html += "<li>Mac address: " + WiFi.macAddress() + "</li>";
-  html += "<li>IPv4 address: " + WiFi.localIP().toString() + "</li>";
-  html += "<li>IPv6 address: " + WiFi.localIPv6().toString() + "</li>";
-  html += "</ul>";
-  html += "<h3>Settings</h3>";
-  html += "<ul>";
-  html += "<li>Access point: " + String(iotWebConf.getWifiSsidParameter()->valueBuffer) + "</li>";
-  html += "<li>Location: " + String(iotWebParamLocation.value()) + "</li>";
-  html += "<li>API key: " + String(iotWebParamOpenWeatherApiKey.value()) + "</li>";
-  html += "<li>Time zone: " + String(iotWebParamTimeZone.value()) + " (" + timezonedb_get_definition(iotWebParamTimeZone.value()) + ")" + "</li>";
-  html += "<li>Units: " + String(iotWebParamMetric.value() ? "Metric" : "Imperial") + "</li>";
-  html += "</ul>";
-  html += "<h3>Diagnostics</h3>";
-  html += "<ul>";
-  html += "<li>Current time: " + String(time_buffer) + " (Local)</li>";
-  html += "<li>Uptime: " + String(format_duration(millis() / 1000)) + "</li>";
-  html += "<li>Free heap: " + format_memory(ESP.getFreeHeap()) + "</li>";
-  html += "</ul>";
-  html += "<br/>Go to <a href=\"config\">configure page</a> to change settings.";
-  html += "</body></html>";
+  // Wifi Modes
+  const char *wifi_modes[] = {"NULL", "STA", "AP", "STA+AP"};
+
+  const moustache_variable_t substitutions[] = {
+      // Version / CPU
+      {"AppTitle", APP_TITLE},
+      {"AppVersion", APP_VERSION},
+      {"ThingName", iotWebConf.getThingName()},
+      {"ChipModel", ESP.getChipModel()},
+      {"ChipRevision", String(ESP.getChipRevision())},
+      {"CpuFreqMHz", String(ESP.getCpuFreqMHz())},
+      {"CpuCores", String(ESP.getChipCores())},
+      {"FlashSize", format_memory(ESP.getFlashChipSize(), 0)},
+      {"HeapSize", format_memory(ESP.getHeapSize())},
+      // Diagnostics
+      {"Uptime", String(format_duration(millis() / 1000))},
+      {"FreeHeap", format_memory(ESP.getFreeHeap())},
+      {"MaxAllocHeap", format_memory(ESP.getMaxAllocHeap())},
+      {"LocalTime", get_localtime("%c")},
+      // Network
+      {"HostName", get_hostname()},
+      {"MacAddress", WiFi.macAddress()},
+      {"AccessPoint", WiFi.SSID()},
+      {"SignalStrength", String(WiFi.RSSI())},
+      {"IpV4", WiFi.localIP().toString()},
+      {"IpV6", WiFi.localIPv6().toString()},
+      {"WifiMode", wifi_modes[WiFi.getMode()]},
+      {"NetworkState.ApMode", String(iotWebConf.getState() == iotwebconf::NetworkState::ApMode)},
+      {"NetworkState.OnLine", String(iotWebConf.getState() == iotwebconf::NetworkState::OnLine)},
+      // Settings
+      {"Location", iotWebParamLocation.value()},
+      {"ApiKeyPresent", String(String(iotWebParamOpenWeatherApiKey.value()).length() > 0)},
+      {"ApiKey", iotWebParamOpenWeatherApiKey.value()},
+      {"Timezone", iotWebParamTimeZone.value()},
+      {"TZ", tz},
+      {"Units", iotWebParamMetric.value() ? "Metric" : "Imperial"}};
+
+  server.sendHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  auto html = moustache_render(file_data_index_html, substitutions);
   server.send(200, "text/html", html);
 }
 
@@ -201,7 +258,7 @@ void setup()
   iotWebConf.addParameterGroup(&param_group);
 
   iotWebConf.getApTimeoutParameter()->visible = true;
-  iotWebConf.setWifiConnectionCallback(update_runtime_config);
+  iotWebConf.setWifiConnectionCallback(on_connected);
   // Set an IO pin (Top button) to reset config when pressed at boot
   iotWebConf.setConfigPin(GPIO_BUTTON_TOP);
   
@@ -211,16 +268,21 @@ void setup()
   server.on("/", HTTP_GET, handleRoot);
   server.on("/config", []
             { iotWebConf.handleConfig(); });
+
+  // bootstrap
+  server.on("/bootstrap.min.css", HTTP_GET, []()
+            {
+              // Cache for 86400 seconds (one day)
+              server.sendHeader("Cache-Control", "max-age=86400");
+              send_content_gzip(file_data_bootstrap_min_css, sizeof(file_data_bootstrap_min_css), "text/css"); });
+
   server.onNotFound([]()
                     { iotWebConf.handleNotFound(); });
 
   // Set the time servers
   configTime(0, 0, NTP_SERVERS);
   // Set the timezone
-  auto tz_definition = timezonedb_get_definition(iotWebParamTimeZone.value());
-  setenv("TZ", tz_definition, 1);
-  tzset();
-
+  set_timezone(iotWebParamTimeZone.value());
   // Clear the screen
   tft.fillRect(0, 0, TFT_HEIGHT, TFT_WIDTH, background_color);
   // Set the location, Font(4) = 26px
@@ -246,7 +308,7 @@ void display_network_state(iotwebconf::NetworkState state)
     image_data = z_image_decode(&image_wifi);
     tft.pushImage(0, 0, image_wifi.width, image_wifi.height, image_data);
     delete[] image_data;
-    tft.drawCentreString(state == iotwebconf::NotConfigured ? "No config. Connect to SSID:" : "To configure, connect to SSID:", TFT_HEIGHT / 2, TFT_WIDTH - 42, font_16pt);
+    tft.drawCentreString(state == iotwebconf::NotConfigured ? "No config. Connect to SSID" : "To configure, connect to SSID", TFT_HEIGHT / 2, TFT_WIDTH - 42, font_16pt);
     tft.drawCentreString(iotWebConf.getThingName(), TFT_HEIGHT / 2, TFT_WIDTH - 26, font_26pt);
     break;
   case iotwebconf::Connecting:
@@ -272,16 +334,8 @@ void display_network_state(iotwebconf::NetworkState state)
 void update_time()
 {
   // Display time
-  struct tm tm;
-  getLocalTime(&tm);
-  char time_buffer[20];
-  if (time_valid())
-    strftime(time_buffer, sizeof(time_buffer), "%T", &tm);
-  else
-    strcpy(time_buffer, "##:##:##");
-
   clock_sprite.fillSprite(background_color);
-  clock_sprite.drawRightString(time_buffer, TOP_BAR_TIME_WIDTH, 0, font_26pt);
+  clock_sprite.drawRightString(get_localtime("%T"), TOP_BAR_TIME_WIDTH, 0, font_26pt);
   clock_sprite.pushSprite(TOP_BAR_TIME_X, TOP_BAR_Y);
 }
 

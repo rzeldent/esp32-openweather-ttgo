@@ -28,9 +28,15 @@ To reset the configuration press the top button while restarting.
 
 There is also an option to use an alternative weather icon pack. This can be changed by the batch job to generate the icons.
 
+# Status
+The status is visible when connecting to the device using a web browser.
+This page shows the status of the device, network and settings.
+
+![Status](assets/status.png)
+
 ## Current state
 At the moment the basic functionality is working: 
- - Time is updated
+ - Time is updated, with timzones
  - API is queried and temperature, humidity, pressure, weather description and icons are shown.
  - Web browser configuration and status screen
 
