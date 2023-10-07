@@ -7,8 +7,6 @@
 // Setting for the display are defined in platformio.ini
 #include <TFT_eSPI.h>
 
-#include <Button2.h>
-
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
@@ -43,13 +41,11 @@ constexpr auto font_48pt = 6; // Font 6. Large 48 pixel font, needs ~2666 bytes 
 auto tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
 auto clock_sprite = TFT_eSprite(&tft);
 
-Button2 button1(GPIO_BUTTON_TOP);
-Button2 button2(GPIO_BUTTON_BOTTOM);
-
 // Web server
 DNSServer dnsServer;
 WebServer server(80);
-IotWebConf iotWebConf(WIFI_SSID, &dnsServer, &server, WIFI_PASSWORD, CONFIG_VERSION);
+auto deviceName = String(WIFI_SSID) + "-" + String(ESP.getEfuseMac(), 16);
+IotWebConf iotWebConf(deviceName.c_str(), &dnsServer, &server, WIFI_PASSWORD, CONFIG_VERSION);
 
 auto param_group = iotwebconf::ParameterGroup("openweather", "Open Weather");
 auto iotWebParamOpenWeatherApiKey = iotwebconf::Builder<iotwebconf::TextTParameter<33>>("apikey").label("Open Weather API key").defaultValue(DEFAULT_OPENWEATHER_API_KEY).build();
