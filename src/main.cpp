@@ -175,7 +175,7 @@ void handleRoot()
   // Wifi Modes
   const char *wifi_modes[] = {"NULL", "STA", "AP", "STA+AP"};
 
-  const moustache_variable_t substitutions[] = {
+  moustache_variable_t substitutions[] = {
       // Version / CPU
       {"AppTitle", APP_TITLE},
       {"AppVersion", APP_VERSION},
