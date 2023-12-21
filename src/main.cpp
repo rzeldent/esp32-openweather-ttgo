@@ -50,7 +50,7 @@ IotWebConf iotWebConf(deviceName.c_str(), &dnsServer, &server, WIFI_PASSWORD, CO
 auto param_group = iotwebconf::ParameterGroup("openweather", "Open Weather");
 auto iotWebParamOpenWeatherApiKey = iotwebconf::Builder<iotwebconf::TextTParameter<33>>("apikey").label("Open Weather API key").defaultValue(DEFAULT_OPENWEATHER_API_KEY).build();
 auto iotWebParamLocation = iotwebconf::Builder<iotwebconf::TextTParameter<64>>("location").label("Location").defaultValue(DEFAULT_LOCATION).build();
-auto iotWebParamTimeZone = iotwebconf::Builder<iotwebconf::SelectTParameter<sizeof(posix_timezone_names[0])>>("timezone").label("Choose timezone").optionValues((const char *)&posix_timezone_names).optionNames((const char *)&posix_timezone_names).optionCount(sizeof(posix_timezone_names) / sizeof(posix_timezone_names[0])).nameLength(sizeof(posix_timezone_names[0])).defaultValue(DEFAULT_TIMEZONE).build();
+auto iotWebParamTimeZone = iotwebconf::Builder<iotwebconf::SelectTParameter<sizeof(posix_timezone_tz_t)>>("timezone").label("Choose timezone").optionValues(posix_timezone_tzs->zone_name).optionNames(posix_timezone_tzs->zone_name).optionCount(sizeof(posix_timezone_tzs) / sizeof(posix_timezone_tzs[0])).nameLength(sizeof(timezone_name)).defaultValue(DEFAULT_TIMEZONE).build();
 auto iotWebParamMetric = iotwebconf::Builder<iotwebconf::CheckboxTParameter>("metric").label("Use metric units").defaultValue(DEFAULT_METRIC).build();
 
 // Screen is 240 * 135 pixels (rotated)
